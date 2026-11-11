@@ -32,6 +32,7 @@ class UpdateUI:
         self.menu.add_command(label='检查更新', command=lambda: self.check(True))
         self.menu.add_checkbutton(label='自动检查更新', variable=self.auto, command=self.save_settings)
         self.menu.add_command(label='关于软件', command=self.about)
+        self.menu.add_command(label='创建桌面快捷方式', command=self.desktop_shortcut)
         self.button.configure(menu=self.menu)
         self.button.pack(side='right', padx=(12, 0))
         if enabled and auto:
@@ -39,6 +40,12 @@ class UpdateUI:
 
     def send(self, kind, value):
         self.app.events.put(('update:' + kind, value))
+
+    def desktop_shortcut(self):
+        if not getattr(sys, 'frozen', False):
+            self.app.notice.set('请使用 AIClockIn.exe 创建桌面快捷方式。')
+            return
+        self.app.worker('--install')
 
     def save_settings(self):
         try:

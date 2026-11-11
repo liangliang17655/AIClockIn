@@ -38,7 +38,7 @@ def selftest(report):
 def main():
     parser = argparse.ArgumentParser(description='AIClockIn 本地核心签到')
     modes = parser.add_mutually_exclusive_group()
-    for option in ('silent', 'status', 'add-workbuddy', 'add-trae', 'auto-on', 'auto-off', 'self-test'):
+    for option in ('silent', 'status', 'add-workbuddy', 'add-trae', 'auto-on', 'auto-off', 'self-test', 'install'):
         modes.add_argument('--' + option, action='store_true')
     parser.add_argument('--data', type=Path)
     parser.add_argument('--account')
@@ -65,6 +65,12 @@ def main():
             import os
             launch_helper(interrupted, os.getpid())
             return 0
+    from aiclockin.installer import needs_install, run as install_app
+    gui = not any((args.silent, args.status, args.add_workbuddy, args.add_trae, args.auto_on, args.auto_off))
+    if args.install or needs_install(Path(sys.executable), frozen=getattr(sys, 'frozen', False), gui=gui, data=args.data):
+        if not getattr(sys, 'frozen', False):
+            raise ValueError('安装功能请使用打包后的 EXE')
+        return install_app(Path(sys.executable), args.data)
     from aiclockin.store import Store, Busy, write_json
     from aiclockin.service import Service
     store = Store(args.data or home() / 'data')

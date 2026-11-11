@@ -1,5 +1,19 @@
 # 交接
 
+## TASK-005 · 2026-11-11 · v0.3.0 安装与桌面入口
+
+用户已确认固定 D 盘目录和桌面入口。实现同一 EXE 内安装窗口，不引入安装器框架/依赖，不增加第二份运行时。新用户默认 D:/AIClockIn；已有用户识别源旁 data、当前用户自动任务或默认目录已有数据，保留原 EXE/data 路径。设置新增“创建桌面快捷方式”，补建后关闭安装窗口，不重复打开主窗口。
+
+实际文件：新增 aiclockin/installer.py、tests/test_installer.py、tests/test_installer_gui.py、tests/verify_install_windows.py、tests/preview_install.py、docs/INSTALL-PLAN.md；修改 main.py、aiclockin/update_gui.py、VERSION、项目根 AIClockIn.exe、README.md、AGENTS.md 及 docs/PROJECT.md、RELEASING.md、TASKS.md、HANDOFF.md、CHANGELOG.md。原因：让用户从桌面使用，安装/重复安装保护账号和原任务，不改签到核心。
+
+实际验证：python -B -m unittest discover -s tests -v 共 55 项通过；release.ps1 复用 D 盘既有 PyInstaller 6.22.3 构建并通过离线版本/加密/数据库/Tk 自检；python -B tests/verify_install_windows.py 通过真实冻结首启（创建 Store 前显示安装、取消退出码 1）、新目录安装、实际 .lnk 启动主 GUI、自定义 --data、重复安装数据哈希/解密、不同目标链接保护、旧版原地升级和唯一临时任务升级后执行（无启用账号退出码 1）/XML不变/清理。python -B tests/preview_install.py 最小尺寸新装/已有窗口截图已检查。测试未调用真实平台签到。
+
+一次独立审查指出默认目录已有数据但未开启任务的识别遗漏；已补先失败后通过回归。并发覆盖链接问题提升为必修，使用两个同步 PowerShell 进程复现，再改 .NET 原子无覆盖 Move；补入口后多开主窗口也已修复。三个回归先失败后通过，最终全量 55 项通过。集成脚本曾在链接启动后观察 PowerShell 进程遇到 WinError 5，改为原生 Win32 查询/关闭测试副本，并等待全部退出，最终完整验证通过；未据此推断平台或用户系统故障。未派发二次审查。
+
+已部署项目根 0.3.0：SHA256 31bbe9344a75719ade38b6262ef9cda762411172f23e138a08119ebf21c421e7，14,095,515 字节。真实桌面 C:/Users/sq/Desktop/AIClockIn 自动签到.lnk 指向原 D 盘项目 EXE，并保留原 --data。实际账号/数据库等文件哈希和原 AIClockIn-Auto XML 前后完全相同；未迁移到 D:/AIClockIn，以免改动已有账号/任务路径。证据在 D:/个人开发软件/AI工作区/outputs/AIClockIn-validation/install/（windows-install.json、deployment.json、new.bmp、existing.bmp）。
+
+风险/未验证：真实 C 盘下载来源未新建 EXE 做测试（遵守存放偏好），C 盘路径由启动路由单测覆盖，真实来源使用 D 盘隔离副本；当前 Windows 用户的 C 盘桌面快捷方式已实际创建。其他 Windows 用户/重定向桌面环境、实体断电、真实 GitHub Release 升级仍未验证。安装不自动开启定时签到；用户仍需在主界面点击开启。源码 Git 提交/推送与正式 Release 发布分开，不能把本地构建当成已发布 Release。
+
 ## TASK-004 · 2026-11-11 · README 直接下载
 
 用户要求下载入口名称易懂、点击直接下载，不再进入 Release 页面。修改 README.md 顶部为“点击下载自动签到软件（Windows 电脑版）”，指向仓库 main 分支已跟踪 AIClockIn.exe 的 raw.githubusercontent.com HTTPS 二进制地址；下载名称就是 AIClockIn.exe，移除寻找 Assets、重命名及未发布 404 的旧说明。仅更改下载文档及本次 TASKS/CHANGELOG/HANDOFF 记录，不改变应用更新源或程序行为，不创建 Release。

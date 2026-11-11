@@ -4,7 +4,9 @@
 
 下载地址：https://github.com/liangliang17655/AIClockIn/releases/latest
 
-下载 Assets 中的 `AIClockIn-v版本号-windows-x64.exe`，放在固定 D 盘目录，重命名为 `AIClockIn.exe`，双击运行。它是便携单文件，无需安装 Python。不要下载 Source code ZIP。原有 v0.1.0 不含更新器，需要关闭所有窗口并手动换一次 EXE，保留原 `data`；之后可在“设置 → 检查更新”升级。
+README 按钮直接下载 `AIClockIn.exe`。也可下载正式 Release 中的 `AIClockIn-v版本号-windows-x64.exe` 后双击。v0.3.0 起，同一单文件内置安装入口：新用户选择 D 盘安装目录（默认 D:/AIClockIn），创建桌面的“AIClockIn 自动签到”后使用；最终程序固定名为 AIClockIn.exe，无需用户重命名或安装 Python。不要下载 Source code ZIP。
+
+已有本地账号或当前用户自动任务时保留原程序和 data 路径，不迁移。默认目录内的已有数据在无自动任务时也会被识别。设置菜单提供补建快捷方式入口。此安装入口没有引入额外安装框架，也不添加卸载服务；更新仍只替换固定位置的程序文件。原有 v0.1.0 不含更新器，需要先手动换一次 EXE；后续可在“设置 → 检查更新”升级。
 
 ## 维护者发布步骤
 
@@ -32,7 +34,7 @@
 
 ## 软件内更新流程
 
-- GUI 启动 1.2 秒后在后台检查 `/releases/latest`；最新/网络异常不弹窗。手动检查会说明结果并允许重试；未发布 Release 如实提示。
+- 首次安装窗口不联网检查更新；进入主 GUI 1.2 秒后在后台检查 `/releases/latest`；最新/网络异常不弹窗。手动检查会说明结果并允许重试；未发布 Release 如实提示。
 - 自动检查默认开启，可在设置菜单关闭。偏好保存在原数据目录的 `update-settings.json`；不更改账号和任务。
 - 发现新版本后显示远程发布说明。“立即更新”下载并显示进度，可取消；SHA256/大小/x64 PE 验证通过后，点击“安装并重启”。不接受源码 ZIP、未知附件或无校验安装包。
 - 下载、辅助程序、旧 EXE 备份、健康检查报告、事务状态放 `D:/个人开发软件/AI工作区/temp/AIClockIn/updates/<唯一事务>/`；不放入 data。

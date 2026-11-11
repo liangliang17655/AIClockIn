@@ -25,6 +25,9 @@
 
 ## 决策
 
+- TASK-005，2026-11-11 用户确认：增加安装入口和桌面快捷方式。复用同一单文件的 installer.py，不引入安装框架；新用户默认 D:/AIClockIn，已有用户保留当前 EXE/data/任务路径，不迁移账号。桌面 .lnk 按 Windows 当前用户实际桌面位置写入（用户明确授权桌面入口，可能在 C 盘，仅写快捷方式）。详见 [安装方案与验证](INSTALL-PLAN.md)。
+- 首次无本地数据且无显式 --data 的冻结 GUI 显示安装窗口，在创建 Store 前完成路由；后台任务、自检和更新辅助不进入安装。设置菜单支持为原目录补快捷方式。链接目标和 --data 使用绝对路径；不同目标同名链接拒绝覆盖。
+
 - TASK-002，2026-11-11 用户确认：增加 GitHub 正式 Release 自动更新，继续便携单文件形式，使用本地 EXE 副本作为独立辅助程序，仅替换原绝对路径的 EXE；不迁移 data，不重建计划任务。详见 [技术方案](UPDATE-DESIGN.md)、[发布说明](RELEASING.md) 和 [验证记录](UPDATE-VALIDATION.md)。
 - 更新模块：update.py 负责 Release/HTTPS/校验；update_gui.py 负责菜单和异步交互；update_apply.py 负责互斥、替换、恢复和重启；health_process.py 用 Windows Job 隔离新版自检进程树；version.py 读取包内 VERSION。main.py 在访问真实数据前协调更新。检查只在 GUI 启动，不在静默签到和健康检查中运行。
 
