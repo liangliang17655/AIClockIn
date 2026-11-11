@@ -1,5 +1,15 @@
 # 交接
 
+## TASK-003 · 2026-11-11 · 用户授权提交远程
+
+目标：提交已交付 v0.2.0 至公开仓库并写清提交说明。执行前 git fetch 确认 origin/main 与开发基线 016521d 相同，无远程冲突。功能提交 a2f9f6d（feat: 发布 v0.2.0，新增 GitHub 自动更新功能）已从 feature/github-updater 快进合入 main，git push origin main 成功，输出 016521d..a2f9f6d main -> main。当前工作分支 main，保留开发分支，未强推或删除分支。
+
+提交包含 TASK-002 的代码、测试、发布工具、README 下载入口及原已跟踪 EXE；完整文件映射见 UPDATE-VALIDATION.md。本次补充记录文件为 docs/TASKS.md、docs/HANDOFF.md 和 CHANGELOG.md，原因是记录用户明确授权后的 Git 交付，不改变应用行为。
+
+提交前重新运行 python -B -m unittest discover -s tests -v：43 项通过；git diff --cached --check 通过；暂存清单无 data、账号、数据库或日志。提交正文说明更新机制、数据保护、验证及线上升级未验证边界。未重复打包或运行隔离 EXE 测试，因为程序代码和已验证产物未发生变化。
+
+风险/下一步：代码推送不等于发布正式 Release；未打标签或上传 Release 附件，真实 GitHub 端到端升级仍待维护者按 RELEASING.md 发布后验证。下方 TASK-002 的“未提交”表述属于当时本地交付阶段历史状态，以本节为最新 Git 交付记录。
+
 ## TASK-002 · 2026-11-11 · v0.2.0 本地交付
 
 用户确认 [自动更新方案](UPDATE-DESIGN.md) 后实施，并追加 README 直接下载安装入口。代码位于本地 feature/github-updater 分支，基线 016521d；没有自动提交、推送、打标签或发布。完整修改清单和逐项实测见 [UPDATE-VALIDATION.md](UPDATE-VALIDATION.md)，发布步骤见 [RELEASING.md](RELEASING.md)。
