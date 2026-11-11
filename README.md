@@ -1,8 +1,20 @@
 # AIClockIn
 
+## 下载使用（无需拉取代码）
+
+**[点击下载最新 Windows 版本](https://github.com/liangliang17655/AIClockIn/releases/latest)**
+
+进入发布页面，在 **Assets** 中下载 `AIClockIn-v版本号-windows-x64.exe`。将下载文件放到固定的 D 盘目录，重命名为 `AIClockIn.exe`，双击运行即可，无需安装 Python 或下载源码。
+
+首次发布前，下载页面可能显示 404，表示正式版尚未发布。请勿将 GitHub 自动生成的 Source code ZIP 当作安装包。
+
+已有用户请保留原目录中的 `data` 文件夹；该文件夹保存账号和签到记录。从 v0.2.0 起，可通过右上角“设置 → 检查更新”升级；v0.1.0 需要先关闭软件并手动替换一次 EXE。
+
 一个独立、简单的 Windows 本地签到工具。只做 WorkBuddy / Trae CN 多账号签到、结果记录和后台定时。
 
-**v0.1.0 · 2026-11-11**。Python 标准库 + Tkinter，独立应用代码；必要的 WorkBuddy 本机登录适配按 MIT 署名复用，见 [来源与许可](THIRD-PARTY-NOTICES.md)。不是将旧签到脚本整体换一层界面。
+**v0.2.0 · 2026-11-11**。Python 标准库 + Tkinter，独立应用代码；必要的 WorkBuddy 本机登录适配按 MIT 署名复用，见 [来源与许可](THIRD-PARTY-NOTICES.md)。不是将旧签到脚本整体换一层界面。
+
+软件启动后会在后台检查最新正式 Release；网络异常不影响原有功能。手动检查、自动检查开关和版本信息位于右上角“设置”。更新包通过 SHA256 校验后才允许安装；详情及维护者打包发布步骤见 [发布与更新说明](docs/RELEASING.md)。
 
 ## 使用
 
@@ -63,8 +75,8 @@ python -B -m unittest discover -s tests -v
 
 ## Git
 
-本目录已初始化为独立本地 Git 仓库，默认分支 `main`。没有配置远程、提交或推送。将来可自行配置自己的 GitHub 仓库。
+本目录是独立 Git 仓库，默认分支 `main`，公开仓库为 [liangliang17655/AIClockIn](https://github.com/liangliang17655/AIClockIn)。自动更新功能在 `feature/github-updater` 分支开发；代码提交与正式 Release 分开管理，下载安装包需按 [发布步骤](docs/RELEASING.md) 上传正式附件。
 
-`.gitignore` 排除账号、数据、日志、构建产物和 EXE；源码、测试、图标、文档和许可可进入仓库。发布 EXE 可使用 GitHub Releases，保留 MIT 和来源声明。
+`.gitignore` 排除账号、数据、日志、构建产物和新增 EXE；已被 Git 跟踪的根目录 EXE 不会因此自动取消跟踪，本次未擅自移除。源码、测试、图标、文档和许可可进入仓库。正式分发使用 GitHub Releases，保留 MIT 和来源声明。
 
 需求、架构和决策见 [项目文档](docs/PROJECT.md)，开发进度见 [任务](docs/TASKS.md)。

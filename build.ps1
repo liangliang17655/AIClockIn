@@ -21,7 +21,7 @@ $env:PYTHONDONTWRITEBYTECODE = '1'
 $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
 & icacls.exe $runtime /inheritance:r /grant:r "*${sid}:(OI)(CI)F" | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'Cannot secure runtime directory' }
-& $BuildPython -B -c "import PyInstaller; assert PyInstaller.__version__ == '6.22.3'" 2>$null
+& $BuildPython -B -c "import importlib.util,sys; sys.exit(0 if importlib.util.find_spec('PyInstaller') and __import__('PyInstaller').__version__ == '6.22.3' else 1)"
 if ($LASTEXITCODE -ne 0) {
     $venv = Join-Path $build 'venv'
     if (-not (Test-Path -LiteralPath (Join-Path $venv 'Scripts\python.exe'))) {

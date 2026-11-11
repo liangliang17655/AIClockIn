@@ -17,10 +17,11 @@ def amount(value):
 
 
 class App:
-    def __init__(self, root, store):
+    def __init__(self, root, store, check_updates=True):
         self.root, self.store = root, store
         self.events = queue.Queue()
         self.running = False
+        self.updating = False
         self.auto_enabled = False
         self.buttons = []
         self.account_rows, self.record_rows = {}, {}
@@ -70,6 +71,8 @@ class App:
         ttk.Label(title, text='AIClockIn', style='Title.TLabel').pack(anchor='w')
         ttk.Label(title, text='只做签到，简单一点。', style='Muted.TLabel').pack(anchor='w')
         ttk.Label(header, text='本机加密保存', style='Muted.TLabel').pack(side='right')
+        from .update_gui import UpdateUI
+        self.updates = UpdateUI(self, header, enabled=check_updates)
 
         auto = ttk.Frame(base, padding=(12, 9))
         auto.grid(row=1, column=0, sticky='ew', pady=(0, 12))
@@ -118,7 +121,16 @@ class App:
         ttk.Label(base, textvariable=self.notice, style='Muted.TLabel', wraplength=980).grid(row=8, column=0, sticky='ew', pady=(8, 0))
         self.refresh()
         self.read_auto()
-        root.after(200, self.poll)
+        self.poll_job = root.after(200, self.poll)
+        root.bind('<Destroy>', self.stop, add='+')
+
+    def stop(self, event):
+        if event.widget == self.root:
+            if self.poll_job:
+                self.root.after_cancel(self.poll_job)
+            if self.updates.startup_job:
+                self.root.after_cancel(self.updates.startup_job)
+            self.updates.cancel.set()
 
     def button(self, parent, text, action, primary=False):
         button = ttk.Button(parent, text=text, command=action, style='Primary.TButton' if primary else 'TButton')
@@ -214,7 +226,7 @@ class App:
         self.worker('--auto-off' if self.auto_enabled else '--auto-on')
 
     def worker(self, *arguments):
-        if self.running:
+        if self.running or self.updating:
             return
         TEMP.mkdir(parents=True, exist_ok=True)
         report = TEMP / ('result-' + uuid.uuid4().hex + '.json')
@@ -244,6 +256,9 @@ class App:
         threading.Thread(target=wait, daemon=True).start()
 
     def poll(self):
+        if self.poll_job:
+            self.root.after_cancel(self.poll_job)
+            self.poll_job = None
         try:
             while True:
                 kind, value = self.events.get_nowait()
@@ -253,7 +268,10 @@ class App:
                     self.auto_detail.set(value['detail'])
                     self.auto_label.configure(foreground='#188069' if value['enabled'] else '#718096')
                     self.auto_button.configure(text='停用自动签到' if value['enabled'] else '开启自动签到')
-                else:
+                elif kind.startswith('update:'):
+                    if self.updates.handle(kind[7:], value):
+                        return
+                elif kind == 'done':
                     self.running = False
                     for button in self.buttons:
                         button.configure(state='normal')
@@ -261,7 +279,8 @@ class App:
                     self.refresh_all()
         except queue.Empty:
             pass
-        self.root.after(200, self.poll)
+        if self.root.winfo_exists():
+            self.poll_job = self.root.after(200, self.poll)
 
     def selection(self):
         selected = self.accounts.selection()
@@ -276,6 +295,8 @@ class App:
             self.worker('--status', '--account', selected)
 
     def edit(self, **changes):
+        if self.updating:
+            return
         selected = self.selection()
         if selected:
             try:

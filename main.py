@@ -22,12 +22,13 @@ def selftest(report):
         root = tk.Tk()
         root.withdraw()
         try:
-            app = App(root, store)
+            app = App(root, store, check_updates=False)
             root.update()
             assert len(app.accounts.get_children()) == 1 and len(app.history.get_children()) == 1
         finally:
             root.destroy()
-    value = {'ok': True, 'dpapi': True, 'history': True, 'gui': True,
+    from aiclockin.version import current
+    value = {'ok': True, 'dpapi': True, 'history': True, 'gui': True, 'version': current(),
              'extracted': str(getattr(sys, '_MEIPASS', 'source')), 'home': str(home())}
     if report:
         write_json(report, value)
@@ -42,12 +43,28 @@ def main():
     parser.add_argument('--data', type=Path)
     parser.add_argument('--account')
     parser.add_argument('--report', type=Path)
+    modes.add_argument('--apply-update', type=Path)
+    parser.add_argument('--wait-pid', type=int, default=0)
+    parser.add_argument('--wait-parent', type=int, default=0)
     args = parser.parse_args()
     prepare()
     if args.report and args.report.resolve().drive.upper() != 'D:':
         raise ValueError('报告只能写入 D 盘')
     if args.self_test:
         return selftest(args.report)
+    if args.apply_update:
+        from aiclockin.update_apply import run_helper
+        return run_helper(args.apply_update, args.wait_pid, args.wait_parent)
+    if getattr(sys, 'frozen', False):
+        from aiclockin.update_apply import UpdateGate, pending, launch_helper
+        with UpdateGate(Path(sys.executable)):
+            interrupted = pending(Path(sys.executable))
+        if interrupted:
+            if any((args.silent, args.status, args.add_workbuddy, args.add_trae, args.auto_on, args.auto_off)):
+                return 2  # Do not use real accounts while an interrupted update needs recovery.
+            import os
+            launch_helper(interrupted, os.getpid())
+            return 0
     from aiclockin.store import Store, Busy, write_json
     from aiclockin.service import Service
     store = Store(args.data or home() / 'data')

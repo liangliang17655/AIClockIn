@@ -1,5 +1,23 @@
 # 交接
 
+## TASK-002 · 2026-11-11 · v0.2.0 本地交付
+
+用户确认 [自动更新方案](UPDATE-DESIGN.md) 后实施，并追加 README 直接下载安装入口。代码位于本地 feature/github-updater 分支，基线 016521d；没有自动提交、推送、打标签或发布。完整修改清单和逐项实测见 [UPDATE-VALIDATION.md](UPDATE-VALIDATION.md)，发布步骤见 [RELEASING.md](RELEASING.md)。
+
+当前 VERSION 和项目根 AIClockIn.exe 已为 0.2.0，仍为 PyInstaller Windows x64 便携单文件。正式附件在 dist/release/v0.2.0/：AIClockIn-v0.2.0-windows-x64.exe、SHA256SUMS.txt。SHA256 9badc04a53c48b8c0445b99c6402aba5d3ba9283bfeda22845156008038aca9b。
+
+设置包含手动检查、自动检查开关、关于。GUI 启动后台检查正式 Release；静默签到和离线自检不检查。新版本读取远程说明，下载/校验后要求确认安装；本机独立辅助 EXE 等待旧进程退出，替换原路径，再用合成数据健康检查、失败恢复、重启并保留原 --data。
+
+数据保护：原 data/accounts.json、history.db 等扁平路径不迁移；更新偏好独立 update-settings.json。签到核心 providers/auth/workbuddy_auth/store/service/schedule 源文件哈希保持原值。实际本地部署时等待原窗口关闭，在更新锁/操作锁内替换，并核对全部实际数据文件（排除正持有的协调锁文件）哈希及生产 AIClockIn-Auto XML 完全不变，没有触发真实签到。
+
+实际验证：43 项 unittest 回归全部通过；release.ps1 构建及离线版本/DPAPI/历史/Tk 自检通过；verify_update_windows.py 真实隔离替换和自动重启、合成数据哈希/解密、唯一临时任务 XML 不变及升级后执行/清理通过；verify_health_timeout.py 专用冻结嵌套卡死 EXE 的进程树超时清理与恢复通过；preview_update.py 截图已检查。一次独立审查的两项 Important 已修复并补测试，无二次审查。具体命令/证据边界见验证文档。
+
+证据在 D:/个人开发软件/AI工作区/outputs/AIClockIn-validation/update/，含 windows-update.json、frozen-timeout.json、deployment.json 和合成截图。部署旧版备份：D:/个人开发软件/AI工作区/temp/AIClockIn/updates/6c325cb362bf4ed2b5ce936655476f1a/previous.exe，不自动清理。
+
+未验证：真实 GitHub 互联网下载/升级（初期查无正式 Release，末期匿名请求 403）、实体断电/硬件故障/防病毒隔离、真实平台领取。旧 v0.1.0 用户要先手动换一次 EXE。下一步由维护者提交/推送、按发布文档上传正式附件和说明，再用隔离用户副本完成线上升级验收。此状态不表示线上发布已完成。
+
+## TASK-001 · 前序交付记录
+
 TASK-001，2026-11-11：独立应用 v0.1.0 已交付。仓库 D:/个人开发软件/国产AI自动签到/AIClockIn 已 git init -b main，没有提交或远程。目录接入时为空。
 
 用户已确认功能范围及保留后台签到。源代码、UI 和数据在本项目独立开发；旧项目的未提交改动保留，不继续修改，旧应用和任务保持原样。

@@ -25,6 +25,9 @@
 
 ## 决策
 
+- TASK-002，2026-11-11 用户确认：增加 GitHub 正式 Release 自动更新，继续便携单文件形式，使用本地 EXE 副本作为独立辅助程序，仅替换原绝对路径的 EXE；不迁移 data，不重建计划任务。详见 [技术方案](UPDATE-DESIGN.md)、[发布说明](RELEASING.md) 和 [验证记录](UPDATE-VALIDATION.md)。
+- 更新模块：update.py 负责 Release/HTTPS/校验；update_gui.py 负责菜单和异步交互；update_apply.py 负责互斥、替换、恢复和重启；health_process.py 用 Windows Job 隔离新版自检进程树；version.py 读取包内 VERSION。main.py 在访问真实数据前协调更新。检查只在 GUI 启动，不在静默签到和健康检查中运行。
+
 - 已批准：Python + Tkinter，保留后台定时功能。
 - 实现选择：单个 Windows 任务减少管理复杂度；固定每日六次并补登录/恢复，界面不提供复杂定时表达式。
 - 实现选择：默认不注册系统任务，首次界面清楚显示“未开启”；由用户显式点击开启，不干扰旧软件。

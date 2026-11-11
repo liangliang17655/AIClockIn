@@ -21,3 +21,4 @@ venv/
 # 打包文件
 build/
 dist/
+*.exe
