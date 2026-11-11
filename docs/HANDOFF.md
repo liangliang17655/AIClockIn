@@ -1,0 +1,24 @@
+# 交接
+
+TASK-001，2026-11-11：独立应用 v0.1.0 已交付。仓库 D:/个人开发软件/国产AI自动签到/AIClockIn 已 git init -b main，没有提交或远程。目录接入时为空。
+
+用户已确认功能范围及保留后台签到。源代码、UI 和数据在本项目独立开发；旧项目的未提交改动保留，不继续修改，旧应用和任务保持原样。
+
+产物：项目根目录 AIClockIn.exe（14,037,486 字节），SHA256 aa576b9088518a7bc07e8f2a522750449f29ae3d1d0ffabcdcc61ca985b960d7。应用运行不依赖旧仓库或外置 Python。打包时复用已存在的 D 盘 PyInstaller 工具环境，构建/缓存/解压产物位于 D 盘。没有整体搬入旧签到脚本，仅 workbuddy_auth.py 为明确署名的 MIT 本机登录适配。
+
+实际文件：aiclockin 下 models/http/providers/store/auth/workbuddy_auth/service/runtime/schedule/gui/__init__ 模块、main.py、assets/app.ico、build.ps1、requirements-build.txt、VERSION、tests/、README/许可/来源、AGENTS.md、docs/、.gitignore 与 CHANGELOG。原因：落实独立精简签到应用、全新 UI、本地版本管理及后台执行要求。
+
+实际验证：
+- `python -B -m unittest discover -s tests -v`：20 项通过，覆盖核心状态/回查、9095、未知状态不领取、账号密文与历史、锁、服务逐账号继续、重登录保持 ID、任务事务、GUI。
+- `python -B tests/preview.py`：1080×780 / 920×660 合成数据截图已检查。截图不使用真实账号，输出位于 D:/个人开发软件/AI工作区/outputs/AIClockIn-validation/。
+- `build.ps1 -BuildPython <已有D盘隔离Python>`：单文件无控制台 EXE 构建成功。
+- `python -B tests/verify_windows.py`：安装版离线加密/历史/Tk 自检通过；复制 EXE 到独立临时目录后，以唯一 AIClockIn-Test-* 名称创建、触发并移除任务；自定义带空格数据目录正确使用，空账号退出码 1，没有伪装成功；任务清理验证通过。
+- GUI 父进程退出后独立 worker 继续完成离线自检，验证通过。
+- 独立审查修复 token 主体与账号不匹配、自定义数据目录在任务中丢失两项 Important，并补先失败后通过的回归；复核未发现 Important。
+- Git 忽略规则核验、git diff --check 和文档链接检查在收尾执行；不自动提交或推送。
+
+未验证及原因：新项目真实 WorkBuddy 导入、Trae 授权和实际领取未执行；没有自动迁移用户旧账号或以真实账号做测试。真实登录/恢复系统事件触发未进行人工休眠测试。模拟与空账号任务通过不能证明真实平台奖励资格或接口永久可用。
+
+当前数据与自动状态：新项目没有真实账号，生产 AIClockIn-Auto 未注册；初次打开需添加账号，点击“开启自动签到”。旧 DailyCheckin 账号、源码和生产任务没有在新项目开发期间修改，旧自动任务仍可能运行。切换使用时请用户在旧软件中停用，避免两套应用同时操作同一账号。
+
+下一步：用户双击 AIClockIn.exe 体验新界面并添加自己的账号进行真实验收；若需要迁移旧账号或替换旧自动任务，另行明确授权。后续上传 GitHub 时只提交被忽略规则允许的源码/文档/测试和许可，EXE 可放 Releases，绝不提交 data。

@@ -1,0 +1,23 @@
+# 私人账号数据
+data/
+config.json
+accounts.json
+.env
+.env.*
+
+# 数据库
+*.db
+*.sqlite
+*.sqlite3
+
+# 日志
+*.log
+
+# Python 临时文件
+__pycache__/
+.venv/
+venv/
+
+# 打包文件
+build/
+dist/

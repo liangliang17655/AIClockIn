@@ -1,0 +1,2 @@
+# Only needed for building an executable; app runtime uses standard library.
+pyinstaller==6.22.3
