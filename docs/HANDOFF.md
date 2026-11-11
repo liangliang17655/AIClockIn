@@ -14,6 +14,8 @@
 
 风险/未验证：真实 C 盘下载来源未新建 EXE 做测试（遵守存放偏好），C 盘路径由启动路由单测覆盖，真实来源使用 D 盘隔离副本；当前 Windows 用户的 C 盘桌面快捷方式已实际创建。其他 Windows 用户/重定向桌面环境、实体断电、真实 GitHub Release 升级仍未验证。安装不自动开启定时签到；用户仍需在主界面点击开启。源码 Git 提交/推送与正式 Release 发布分开，不能把本地构建当成已发布 Release。
 
+Git 交付：沿用用户前序提交远程授权，功能已本地提交 18f0b0e。git fetch origin 遇连接重置，git push origin HEAD:main 遇 github.com:443 连接失败；尚未推送，因此远程下载入口暂未获得本次 0.3.0。下一步网络恢复后同步 main，不能声称线上已更新；本机部署与桌面入口不受此网络失败影响。
+
 ## TASK-004 · 2026-11-11 · README 直接下载
 
 用户要求下载入口名称易懂、点击直接下载，不再进入 Release 页面。修改 README.md 顶部为“点击下载自动签到软件（Windows 电脑版）”，指向仓库 main 分支已跟踪 AIClockIn.exe 的 raw.githubusercontent.com HTTPS 二进制地址；下载名称就是 AIClockIn.exe，移除寻找 Assets、重命名及未发布 404 的旧说明。仅更改下载文档及本次 TASKS/CHANGELOG/HANDOFF 记录，不改变应用更新源或程序行为，不创建 Release。
