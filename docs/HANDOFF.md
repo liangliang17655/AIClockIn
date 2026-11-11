@@ -14,7 +14,11 @@
 
 独立审查未发现 Critical/Important，并额外验证真实 press/release、菜单操作和移焦关闭。次要未补项：连续两次点击只创建一个线程没有独立自动测试；同步 creating_shortcut 防重入已代码核对。未做二次审查。未验证：用户机器确认“仍要运行”之后的实际结果、可信签名/发行信誉、实体断电、真实 GitHub Release 在线升级。SmartScreen 微软依据见 README 链接。
 
-本阶段实际保留现有安装逻辑；此前考虑首装异步查询，但明确 Windows 提示后未做无关启动重构。Git fetch 再次遇连接重置；提交/推送结果以最终 Git 状态为准，不自动发布 Release、不购买证书、不改变 Windows 安全设置。
+本阶段实际保留现有安装逻辑；此前考虑首装异步查询，但明确 Windows 提示后未做无关启动重构。不自动发布 Release、不购买证书、不改变 Windows 安全设置。
+
+用户继续要求同步后，定位 Git 网络差异：当前 Windows 启用了本机 HTTP/HTTPS 系统代理，而 Git 原先直连 GitHub 失败。仅对推送/核对命令通过 -c http.proxy 使用现有系统代理并保留 HTTPS 证书验证，未修改任何持久 Git/系统代理配置。git push origin main 成功（b5bcf14..0045103）；使用同一路由 ls-remote 确认远程 main=00451034cb019526c8ad7962a79abb3ef5655623，本地与远程一致。
+
+再次匿名 HTTPS 下载 README 中 main 分支的实际 EXE 直链：HTTP 200、14,102,080 字节、SHA256 8985e7bb13d9011ef422489da1ec51402a1d1af5eb8957ca8fe6ce68c9fe2134，与本地 v0.3.1 完全一致。代码/下载同步已完成；仍不等于创建 GitHub Release 或消除 SmartScreen。此轮只补交付文档，不重复软件回归/打包，因为程序文件未变化；文档运行 git diff --check，最终提交随代码一并同步。
 
 ## TASK-005 · 2026-11-11 · v0.3.0 安装与桌面入口
 
