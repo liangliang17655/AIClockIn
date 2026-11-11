@@ -70,9 +70,9 @@ class App:
         title.pack(side='left')
         ttk.Label(title, text='AIClockIn', style='Title.TLabel').pack(anchor='w')
         ttk.Label(title, text='只做签到，简单一点。', style='Muted.TLabel').pack(anchor='w')
-        ttk.Label(header, text='本机加密保存', style='Muted.TLabel').pack(side='right')
         from .update_gui import UpdateUI
         self.updates = UpdateUI(self, header, enabled=check_updates)
+        ttk.Label(header, text='本机加密保存', style='Muted.TLabel').pack(side='right', padx=(12, 0))
 
         auto = ttk.Frame(base, padding=(12, 9))
         auto.grid(row=1, column=0, sticky='ew', pady=(0, 12))

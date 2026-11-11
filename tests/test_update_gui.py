@@ -26,7 +26,7 @@ class UpdateGuiTests(unittest.TestCase):
         self.root.update()
 
     def test_menu_manual_latest_and_busy_is_not_cleared(self):
-        self.assertIn('检查更新', [self.app.updates.menu.entrycget(i, 'label') for i in range(3)])
+        self.assertIn('检查更新', [row[0] for row in self.app.updates.menu.rows])
         self.app.running = True
         with patch('aiclockin.update_gui.check', return_value=None), patch('aiclockin.update_gui.messagebox.showinfo') as info:
             self.app.updates.check(True)

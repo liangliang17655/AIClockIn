@@ -1,5 +1,21 @@
 # 交接
 
+## TASK-006 · 2026-11-11 · v0.3.1 设置与快捷方式
+
+用户要求优化设置样式，随后澄清是 GitHub 下载的 EXE 双击无响应，并提供“Windows 已保护你的电脑 / 发布者未知 / 仍要运行”截图。接入时工作区干净、main 与本地 origin/main 均为 b5bcf14，用户已同步上一阶段代码；旧 TASK-005 的远程失败为历史状态。本次分支 fix/settings-startup。
+
+调查：原 EXE 本地启动能显示主窗口；匿名 HTTPS 实际重新下载 GitHub main EXE，200、14,095,515 字节、SHA256 31bbe9344a75719ade38b6262ef9cda762411172f23e138a08119ebf21c421e7，与原本机一致；通过系统关联启动该下载副本约 1 秒出现安装窗口。Authenticode=NotSigned；用户截图确认 Windows 在程序启动前给出 SmartScreen 提示，已说明核对来源后“更多信息 → 仍要运行”。用户本人确认运行后能否打开尚未收到答复；不标记该用户操作已验收。签名未配置，不能声称 Windows 提示已被代码消除。
+
+实际文件：新增 aiclockin/settings_menu.py、tests/test_settings.py、tests/preview_settings.py、tests/verify_settings_windows.py、docs/SETTINGS-FIX.md；修改 aiclockin/update_gui.py、gui.py、VERSION、AIClockIn.exe、README.md、tests/test_update_gui.py 和任务/项目/变更/交接记录。原因：用统一浅色弹层替换默认灰菜单，创建桌面链接改为后台直接调用现有安全创建函数，明确成功/错误，不再拉起安装向导；不改安装核心、签到接口、存储和任务逻辑。
+
+实际验证：python -B -m unittest discover -s tests -v，60 项通过（原 55 + 新增 5）；新增行为先失败后实现，另修复弹层 Esc 需要明确焦点的问题。python -B tests/preview_settings.py 默认/紧凑主界面及弹层截图已检查。release.ps1 复用已有 D 盘 PyInstaller 构建并通过 EXE 离线自检。python -B tests/verify_settings_windows.py 对冻结 EXE 实际鼠标点击菜单及第三项，冲突显示“创建快捷方式失败”；部署后 python -B tests/verify_settings_windows.py --existing 同路径实际点击，弹出“桌面快捷方式已创建”，验证冻结 PowerShell 路径，而非只验证源码 mock。两者均关闭自己启动的窗口，没有签到请求。
+
+本地项目根及桌面目标已更新至 0.3.1，SHA256 8985e7bb13d9011ef422489da1ec51402a1d1af5eb8957ca8fe6ce68c9fe2134，实际账号/数据库等文件哈希及 AIClockIn-Auto XML 未变。证据目录 D:/个人开发软件/AI工作区/outputs/AIClockIn-validation/settings/，含 deployment.json、frozen-success.json、frozen-conflict.json、默认/紧凑截图。GitHub 下载调查副本位于 D 盘 temp/AIClockIn/download-repro，不写 C 盘程序文件。
+
+独立审查未发现 Critical/Important，并额外验证真实 press/release、菜单操作和移焦关闭。次要未补项：连续两次点击只创建一个线程没有独立自动测试；同步 creating_shortcut 防重入已代码核对。未做二次审查。未验证：用户机器确认“仍要运行”之后的实际结果、可信签名/发行信誉、实体断电、真实 GitHub Release 在线升级。SmartScreen 微软依据见 README 链接。
+
+本阶段实际保留现有安装逻辑；此前考虑首装异步查询，但明确 Windows 提示后未做无关启动重构。Git fetch 再次遇连接重置；提交/推送结果以最终 Git 状态为准，不自动发布 Release、不购买证书、不改变 Windows 安全设置。
+
 ## TASK-005 · 2026-11-11 · v0.3.0 安装与桌面入口
 
 用户已确认固定 D 盘目录和桌面入口。实现同一 EXE 内安装窗口，不引入安装器框架/依赖，不增加第二份运行时。新用户默认 D:/AIClockIn；已有用户识别源旁 data、当前用户自动任务或默认目录已有数据，保留原 EXE/data 路径。设置新增“创建桌面快捷方式”，补建后关闭安装窗口，不重复打开主窗口。

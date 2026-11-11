@@ -12,12 +12,15 @@ from .update import ROOT, check, download, expected_hash, UpdateError
 from .update_apply import create_transaction, launch_helper
 from .store import write_json
 from .version import current
+from .installer import create_shortcut, InstallError
+from .settings_menu import SettingsMenu
 
 
 class UpdateUI:
     def __init__(self, app, header, enabled=True):
         self.app, self.root = app, app.root
         self.checking = self.downloading = self.installing = False
+        self.creating_shortcut = False
         self.dialog = None
         self.startup_job = None
         self.cancel = threading.Event()
@@ -27,13 +30,14 @@ class UpdateUI:
         except (OSError, ValueError, AttributeError):
             auto = True
         self.auto = tk.BooleanVar(value=auto)
-        self.button = ttk.Menubutton(header, text='设置', width=7)
-        self.menu = tk.Menu(self.button, tearoff=False)
-        self.menu.add_command(label='检查更新', command=lambda: self.check(True))
-        self.menu.add_checkbutton(label='自动检查更新', variable=self.auto, command=self.save_settings)
-        self.menu.add_command(label='关于软件', command=self.about)
-        self.menu.add_command(label='创建桌面快捷方式', command=self.desktop_shortcut)
-        self.button.configure(menu=self.menu)
+        style = ttk.Style(self.root)
+        style.configure('Settings.TButton', padding=(14, 7), font=('Microsoft YaHei UI', 10),
+                        background='#FFFFFF', foreground='#344560', bordercolor='#DFE5EF')
+        style.map('Settings.TButton', background=[('active', '#EDF3FF'), ('pressed', '#DFE9FC')])
+        self.button = ttk.Button(header, text='设置  ⌄', style='Settings.TButton', command=lambda: self.menu.toggle())
+        self.menu = SettingsMenu(self.root, self.button,
+            [('检查更新', lambda: self.check(True)), ('自动检查更新', self.save_settings),
+             ('创建桌面快捷方式', self.desktop_shortcut), ('关于软件', self.about)], self.auto)
         self.button.pack(side='right', padx=(12, 0))
         if enabled and auto:
             self.startup_job = self.root.after(1200, lambda: self.check(False))
@@ -45,7 +49,18 @@ class UpdateUI:
         if not getattr(sys, 'frozen', False):
             self.app.notice.set('请使用 AIClockIn.exe 创建桌面快捷方式。')
             return
-        self.app.worker('--install')
+        if self.creating_shortcut or self.installing or self.app.updating:
+            return
+        self.creating_shortcut = True
+        self.app.notice.set('正在创建桌面快捷方式…')
+        def run():
+            try:
+                path = create_shortcut(Path(sys.executable), self.app.store.root)
+                self.send('shortcut', (path, None))
+            except Exception as exc:
+                text = str(exc) if isinstance(exc, InstallError) else '创建失败，请检查桌面权限或同名快捷方式后重试。'
+                self.send('shortcut', (None, text))
+        threading.Thread(target=run, daemon=True).start()
 
     def save_settings(self):
         try:
@@ -73,7 +88,15 @@ class UpdateUI:
         threading.Thread(target=run, daemon=True).start()
 
     def handle(self, kind, value):
-        if kind == 'checked':
+        if kind == 'shortcut':
+            self.creating_shortcut = False
+            path, error = value
+            self.app.notice.set(error or '桌面快捷方式已创建。')
+            if error:
+                messagebox.showerror('创建快捷方式失败', error, parent=self.root)
+            else:
+                messagebox.showinfo('桌面快捷方式已创建', f'以后双击桌面的“AIClockIn 自动签到”即可打开。\n\n{path}', parent=self.root)
+        elif kind == 'checked':
             self.checking = False
             manual, item, error = value
             if error:
