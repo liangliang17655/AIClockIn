@@ -1,12 +1,12 @@
 # AIClockIn
 
-## 下载使用（无需拉取代码）
+## 下载软件
 
-**[点击下载最新 Windows 版本](https://github.com/liangliang17655/AIClockIn/releases/latest)**
+**[点击下载自动签到软件（Windows 电脑版）](https://raw.githubusercontent.com/liangliang17655/AIClockIn/main/AIClockIn.exe)**
 
-进入发布页面，在 **Assets** 中下载 `AIClockIn-v版本号-windows-x64.exe`。将下载文件放到固定的 D 盘目录，重命名为 `AIClockIn.exe`，双击运行即可，无需安装 Python 或下载源码。
+适用于 Windows 64 位系统，支持 WorkBuddy 和 Trae CN 多账号签到。
 
-首次发布前，下载页面可能显示 404，表示正式版尚未发布。请勿将 GitHub 自动生成的 Source code ZIP 当作安装包。
+点击上面的链接下载 `AIClockIn.exe`，将文件放到固定的 D 盘文件夹，双击即可使用，免安装，无需安装 Python。
 
 已有用户请保留原目录中的 `data` 文件夹；该文件夹保存账号和签到记录。从 v0.2.0 起，可通过右上角“设置 → 检查更新”升级；v0.1.0 需要先关闭软件并手动替换一次 EXE。
 

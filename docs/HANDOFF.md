@@ -1,5 +1,13 @@
 # 交接
 
+## TASK-004 · 2026-11-11 · README 直接下载
+
+用户要求下载入口名称易懂、点击直接下载，不再进入 Release 页面。修改 README.md 顶部为“点击下载自动签到软件（Windows 电脑版）”，指向仓库 main 分支已跟踪 AIClockIn.exe 的 raw.githubusercontent.com HTTPS 二进制地址；下载名称就是 AIClockIn.exe，移除寻找 Assets、重命名及未发布 404 的旧说明。仅更改下载文档及本次 TASKS/CHANGELOG/HANDOFF 记录，不改变应用更新源或程序行为，不创建 Release。
+
+实际验证：匿名 HTTPS HEAD 返回 200，Content-Type 为 application/octet-stream，Content-Length 14071703，与本地已验证 EXE 大小一致。git diff --check 检查文档；不重复运行软件测试或打包，因为应用代码和 EXE 未变。
+
+边界/下一步：README 直链随 main 中的 EXE 更新；软件内自动更新仍只从正式 GitHub Releases 获取，真实线上更新待正式发布后验证。浏览器是否弹出保存位置由用户浏览器设置决定。后续维护者若不再在 Git 中跟踪 EXE，应同时改为已发布且存在的 Release 附件直链，不能恢复成发布列表页面。
+
 ## TASK-003 · 2026-11-11 · 用户授权提交远程
 
 目标：提交已交付 v0.2.0 至公开仓库并写清提交说明。执行前 git fetch 确认 origin/main 与开发基线 016521d 相同，无远程冲突。功能提交 a2f9f6d（feat: 发布 v0.2.0，新增 GitHub 自动更新功能）已从 feature/github-updater 快进合入 main，git push origin main 成功，输出 016521d..a2f9f6d main -> main。当前工作分支 main，保留开发分支，未强推或删除分支。
