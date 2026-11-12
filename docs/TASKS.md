@@ -12,4 +12,4 @@
 
 | TASK-008 | PyInstaller 文件夹版 + Inno Setup 原生安装与完整目录更新 | v0.4.0 本地构建与隔离安装/升级/卸载、辅助更新通过；72 项回归通过；线上 Release 未发布，向导逐页交互未验证 |
 
-| TASK-009 | 按授权提交 v0.4.0 源码/Setup 并更新 README 下载说明 | 本地整理完成，远程结果见 Git 历史与交付报告；不创建正式 Release |
+| TASK-009 | 按授权提交 v0.4.0 源码/Setup 并更新 README 下载说明 | 已提交 1a4400b 并推送 origin/main；下载 HTTP 200、SHA256 一致；未创建正式 Release |
