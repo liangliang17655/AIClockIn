@@ -2,7 +2,7 @@
 
 ## 下载软件
 
-**[点击下载 Windows 安装包](https://raw.githubusercontent.com/liangliang17655/AIClockIn/main/AIClockInSetup.exe)**
+**[点击下载 AIClockIn 自动签到 Windows版本安装包](https://raw.githubusercontent.com/liangliang17655/AIClockIn/main/AIClockInSetup.exe)**
 
 下载的是带安装向导的 `AIClockInSetup.exe`，无需拉取代码或安装 Python。
 
