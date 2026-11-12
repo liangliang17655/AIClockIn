@@ -49,6 +49,11 @@ class UpdateGuiTests(unittest.TestCase):
         self.app.updates.handle('progress', (30, 100))
         self.assertEqual(float(self.app.updates.progress['value']), 30)
 
+    def test_later_update_closes_without_using_release_local(self):
+        self.app.updates.show_release(Release('v0.4.0','说明','name.exe','',1,None,None))
+        self.app.updates.close_dialog()
+        self.assertIsNone(self.app.updates.dialog)
+
     def test_update_actions_remain_visible_at_minimum_size(self):
         self.root.deiconify()
         self.app.updates.show_release(Release('v0.2.1', '说明\n' * 80, '', '', 1, None, None))

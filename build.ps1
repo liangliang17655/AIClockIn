@@ -1,6 +1,12 @@
-﻿param([string]$BuildPython = 'D:\Python\python.exe', [string]$Destination = '')
+﻿param([string]$BuildPython = 'D:\Python\python.exe', [string]$Destination = '', [string]$VersionFile = '')
 $ErrorActionPreference = 'Stop'
-if (-not $Destination) { $Destination = $PSScriptRoot }
+if (-not $VersionFile) { $VersionFile = Join-Path $PSScriptRoot 'VERSION' }
+$VersionFile=[IO.Path]::GetFullPath($VersionFile)
+if (-not $VersionFile.StartsWith('D:\',[StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetFileName($VersionFile) -ne 'VERSION') { throw 'Version resource must be a VERSION file on D drive' }
+$version = (Get-Content -LiteralPath $VersionFile -Raw).Trim()
+$runtimeName = '_runtime-v'+$version+'-'+[Guid]::NewGuid().ToString('N').Substring(0,12)
+if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'Invalid bundle version' }
+if (-not $Destination) { $Destination = Join-Path $PSScriptRoot "dist\bundle\v$version" }
 $Destination = [IO.Path]::GetFullPath($Destination)
 if (-not $Destination.StartsWith('D:\', [StringComparison]::OrdinalIgnoreCase)) { throw 'Output must be on D drive' }
 $workspace = 'D:\个人开发软件\AI工作区'
@@ -34,11 +40,16 @@ if ($LASTEXITCODE -ne 0) {
 }
 Push-Location $PSScriptRoot
 try {
-    & $BuildPython -B -m PyInstaller --noconfirm --onefile --windowed --noupx --name AIClockIn `
+    & $BuildPython -B -m PyInstaller --noconfirm --onedir --contents-directory $runtimeName --windowed --noupx --name AIClockIn `
         --icon "$PSScriptRoot\assets\app.ico" --add-data "$PSScriptRoot\assets\app.ico;assets" `
-        --add-data "$PSScriptRoot\VERSION;." --add-data "$PSScriptRoot\LICENSE;." --add-data "$PSScriptRoot\THIRD-PARTY-NOTICES.md;." `
-        --runtime-tmpdir $runtime --distpath (Join-Path $build 'dist') --workpath (Join-Path $build 'work') --specpath $build main.py
+        --add-data "$VersionFile;." --add-data "$PSScriptRoot\LICENSE;." --add-data "$PSScriptRoot\THIRD-PARTY-NOTICES.md;." `
+        --distpath (Join-Path $build 'folder-dist') --workpath (Join-Path $build 'folder-work') --specpath $build main.py
     if ($LASTEXITCODE -ne 0) { throw 'EXE build failed' }
-    Copy-Item -LiteralPath (Join-Path $build 'dist\AIClockIn.exe') -Destination (Join-Path $Destination 'AIClockIn.exe') -Force
-    Get-FileHash -LiteralPath (Join-Path $Destination 'AIClockIn.exe') -Algorithm SHA256
+    $bundle = Join-Path $Destination 'AIClockIn'
+    if (Test-Path -LiteralPath (Join-Path $bundle 'data')) { throw 'Build output must not contain user data' }
+    New-Item -ItemType Directory -Path $bundle -Force | Out-Null
+    Copy-Item -Path (Join-Path $build 'folder-dist\AIClockIn\*') -Destination $bundle -Recurse -Force
+    & $BuildPython -B -c "from aiclockin.package import write_manifest; import sys; write_manifest(sys.argv[1],sys.argv[2],sys.argv[3])" $bundle $version $runtimeName
+    if ($LASTEXITCODE -ne 0) { throw 'Bundle manifest failed' }
+    Get-FileHash -LiteralPath (Join-Path $bundle 'AIClockIn.exe') -Algorithm SHA256
 } finally { Pop-Location }

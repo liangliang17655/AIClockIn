@@ -1,49 +1,38 @@
-# Windows 发布与自动更新
+# v0.4.0 起的打包与发布
 
-## 用户下载
+用户批准 PyInstaller 文件夹版 + Inno Setup 原生安装包。应用仍为 Python/Tkinter；Setup 当前用户安装，默认 D:\AIClockIn，提供目录选择、桌面/开始菜单与卸载。已有安装沿用原路径，数据不迁移。
 
-下载地址：https://github.com/liangliang17655/AIClockIn/releases/latest
+## 构建
 
-README 按钮直接下载 `AIClockIn.exe`。也可下载正式 Release 中的 `AIClockIn-v版本号-windows-x64.exe` 后双击。v0.3.0 起，同一单文件内置安装入口：新用户选择 D 盘安装目录（默认 D:/AIClockIn），创建桌面的“AIClockIn 自动签到”后使用；最终程序固定名为 AIClockIn.exe，无需用户重命名或安装 Python。不要下载 Source code ZIP。
+在 Windows x64 项目根目录执行：
 
-已有本地账号或当前用户自动任务时保留原程序和 data 路径，不迁移。默认目录内的已有数据在无自动任务时也会被识别。设置菜单提供补建快捷方式入口。此安装入口没有引入额外安装框架，也不添加卸载服务；更新仍只替换固定位置的程序文件。原有 v0.1.0 不含更新器，需要先手动换一次 EXE；后续可在“设置 → 检查更新”升级。
+```powershell
+.\tools\bootstrap-inno.ps1
+.\release.ps1 -BuildPython <已有打包Python的绝对路径>
+```
 
-## 维护者发布步骤
+工具引导固定 Inno Setup 7.1.1 官方下载的 SHA256 和签名发布者，工具及缓存放 D 盘。不配置 GitHub Token，不关闭 TLS 校验。build.ps1 使用 PyInstaller 6.22.3 --onedir，生成 dist/bundle/v版本/AIClockIn；release.ps1 执行离线自检后调用 ISCC。仅修改安装脚本时可用 -Bundle 指定已验证目录复用构建。
 
-1. 修改唯一版本源 `VERSION`，使用 `主版本.次版本.修订号`，例如 0.2.0。Bug 修复增加末位，功能增加次版本；不发布比现有正式版更低的版本。
-2. 完成相关测试与发布回归；在项目 PowerShell 运行：
+完整依赖使用每次构建唯一的 _runtime-v版本-标识，升级保留旧依赖用于恢复；不要只分发其中的 AIClockIn.exe，也不要手动删除仍用于恢复的旧依赖。data 从不进入安装包。
 
-   ```powershell
-   python -B -m unittest discover -s tests -v
-   .\release.ps1
-   ```
+## 正式 Release
 
-   复用已构建 EXE 时可运行 `./release.ps1 -Exe 'D:\某目录\AIClockIn.exe'`，脚本会执行离线自检并核对内嵌版本。所有打包/缓存/自检在 D 盘。不要在旧程序运行时覆盖它；默认 Release 构建输出到 `dist`，不替换项目根 EXE。
+修改 VERSION，提交源码，创建对应 vX.Y.Z 标签；Release 不选 Draft/Pre-release。标题用版本号与简短主题，正文列实际修复/新增/已知限制。从 dist/release/vX.Y.Z 上传：
 
-3. GitHub 仓库 → Releases → Draft a new release。标签 `v0.2.0`，标题如 `AIClockIn v0.2.0`，指向本次经过验证的代码提交。**提交、推送、打标签和发布由维护者执行，脚本不会代办。**
-4. 发布说明填写实际新增/修复/已知问题，软件直接显示该文本，不执行其中的 HTML 或脚本。
-5. 上传 `dist/release/v0.2.0/` 中两个正式附件：
+- AIClockIn-vX.Y.Z-Setup-windows-x64.exe（更新器识别的正式安装包）
+- AIClockInSetup.exe（相同文件的固定名称，方便直接下载）
+- SHA256SUMS.txt（同时包含上述两个名称）
 
-   ```text
-   AIClockIn-v0.2.0-windows-x64.exe
-   SHA256SUMS.txt
-   ```
+不要上传源码 ZIP 作为更新包。代码推送不等于发布 Release。README 的 raw-main 固定下载入口需要另外上传根目录同名 Setup；未上传之前不能宣称链接可用。本任务未创建 Release 或推送二进制。
 
-   不要上传用户 `data`、账号、数据库、日志或本地事务文件。校验文件使用 UTF-8，每行 `64位SHA256  完整附件名`。发布后不要重新替换同一标签的附件；需要修复时增加版本号再发布。
-6. 确认不勾选 Pre-release，发布为最新正式 Release；检查附件能匿名下载，再用隔离副本手动检查和升级。Draft 和 Pre-release 不作为正式更新源。
+## 更新机制
 
-## 软件内更新流程
+启动后台/手动检查 GitHub 最新正式 Release，显示 Release 正文。HTTPS 下载、进度、超时重试与 SHA256 校验后，复制完整当前运行目录到 D 盘独立辅助目录。辅助进程等待旧进程退出，按原程序和数据绝对路径静默运行 Setup，再离线健康检查并重启；失败恢复原启动文件、元数据及卸载登记，旧依赖仍在。安装期间互斥阻止该安装的其他实例启动，不强杀签到操作。更新目录不放 data。
 
-- 首次安装窗口不联网检查更新；进入主 GUI 1.2 秒后在后台检查 `/releases/latest`；最新/网络异常不弹窗。手动检查会说明结果并允许重试；未发布 Release 如实提示。
-- 自动检查默认开启，可在设置菜单关闭。偏好保存在原数据目录的 `update-settings.json`；不更改账号和任务。
-- 发现新版本后显示远程发布说明。“立即更新”下载并显示进度，可取消；SHA256/大小/x64 PE 验证通过后，点击“安装并重启”。不接受源码 ZIP、未知附件或无校验安装包。
-- 下载、辅助程序、旧 EXE 备份、健康检查报告、事务状态放 `D:/个人开发软件/AI工作区/temp/AIClockIn/updates/<唯一事务>/`；不放入 data。
-- 辅助程序来自本机当前 EXE 的副本；等待 GUI 和单文件外层进程退出，再在同目录暂存替换。后台操作未结束或其他窗口占用时，保留旧版并报告。
-- 新版使用合成数据执行离线健康检查，检查成功后按原绝对路径及 `--data` 重启。失败恢复旧 EXE；备份一直保留。突然中断的替换事务在下次 GUI 启动时尝试恢复，后台签到遇到待恢复状态会退出，不冒险使用账号。
-- 更新不修改计划任务、不迁移数据库、不刷新登录状态；EXE 路径、名称和真实数据路径保持不变。首次下载后必须重命名为 `AIClockIn.exe`，开启定时后不要随意移动它。
+v0.3.x 旧更新器不认识 Setup，必须手动运行一次新安装包。新版正常启动不再显示自制 Tk 安装器。旧项目根 EXE 保留原样，不能用文件夹版单个 EXE 覆盖它。
 
-## 失败处理与边界
+## 数据与验证
 
-网络、SSL、校验、权限或占用失败均不会标为更新成功。磁盘损坏、权限被撤销或防病毒隔离可能导致自动恢复失败，此时会保留事务目录并明确提示备份位置，需要手动恢复 `previous.exe`。不要在更新期间清理上述事务目录。
+Setup 不覆盖账号、SQLite、历史、更新偏好；卸载保留数据，自动任务仅在路径、数据参数、当前用户都匹配时移除。升级保留 EXE 路径，所以原计划任务继续有效。凭据仍由原 Windows 用户 DPAPI 解密。
 
-SHA256 用于完整性校验，不代替代码签名；发布仓库和维护者权限是信任边界。本项目不下载执行远程脚本，不关闭 SSL 验证，不要求 GitHub Token。实际互联网升级需要先发布正式 Release，未发布前只能做受控接口和隔离 EXE 验证。
+实际测试与未验证边界见 [TASK-008 验收](INNO-PLAN.md)。发布前运行必要回归及真实隔离安装/升级/卸载测试。当前没有可信代码签名，SmartScreen 提示可能继续出现，换成 Setup 不会消除它。Inno 启动器使用 Windows TEMP；构建和应用更新暂存显式使用 D 盘。

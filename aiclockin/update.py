@@ -82,6 +82,7 @@ class Release:
     size: int
     checksum_url: str | None
     digest: str | None
+    kind: str = 'portable'
 
 
 def parse_release(data, local):
@@ -92,7 +93,10 @@ def parse_release(data, local):
     if remote <= version(local):
         return None
     normalized = '.'.join(map(str, remote))
-    name = f'AIClockIn-v{normalized}-windows-x64.exe'
+    setup_name = f'AIClockIn-v{normalized}-Setup-windows-x64.exe'
+    available = data.get('assets', [])
+    setup = isinstance(available, list) and any(isinstance(a,dict) and a.get('name')==setup_name for a in available)
+    name = setup_name if setup else f'AIClockIn-v{normalized}-windows-x64.exe'
     assets = data.get('assets', [])
     if not isinstance(assets, list):
         raise UpdateError('Release 附件格式无效')
@@ -118,7 +122,8 @@ def parse_release(data, local):
     if not isinstance(notes, str):
         raise UpdateError('更新说明格式无效')
     return Release(tag, notes, name, exe['browser_download_url'], size,
-                   sums['browser_download_url'] if sums else None, digest[7:].lower() if digest else None)
+                   sums['browser_download_url'] if sums else None, digest[7:].lower() if digest else None,
+                   'setup' if setup else 'portable')
 
 
 def check(local):

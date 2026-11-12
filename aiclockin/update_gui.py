@@ -204,6 +204,9 @@ class UpdateUI:
             return
         if self.installing:
             return
+        if item.kind!='setup' and (Path(sys.executable).parent/'bundle-manifest.json').exists():
+            self.status.set('该版本缺少完整 Setup 安装包，无法安全更新文件夹版。')
+            return
         if Path(sys.executable).name != 'AIClockIn.exe':
             self.status.set('请先将软件命名为 AIClockIn.exe 并放在固定目录，再进行自动更新。')
             return
@@ -217,8 +220,13 @@ class UpdateUI:
         self.status.set('正在准备独立更新程序…')
         def run():
             try:
-                manifest = create_transaction(Path(sys.executable), path, self.app.store.root, item.tag, expected_hash(item))
-                launch_helper(manifest, os.getpid())
+                if item.kind=='setup':
+                    from . import setup_update
+                    manifest=setup_update.prepare(Path(sys.executable),path,self.app.store.root,item.tag,expected_hash(item))
+                    setup_update.launch_helper(manifest,os.getpid())
+                else:
+                    manifest = create_transaction(Path(sys.executable), path, self.app.store.root, item.tag, expected_hash(item))
+                    launch_helper(manifest, os.getpid())
                 self.send('helper', None)
             except Exception:
                 self.send('helper', '无法准备更新辅助程序，当前版本未修改。请稍后重试。')

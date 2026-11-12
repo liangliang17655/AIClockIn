@@ -35,7 +35,8 @@ def kernel():
 
 class UpdateGate:
     def __init__(self, target, timeout=90):
-        self.name = 'Local\\AIClockIn-update-' + hashlib.sha256(str(Path(target).resolve()).casefold().encode()).hexdigest()[:32]
+        from .package import unicode_md5
+        self.name = 'Local\\AIClockIn-update-' + unicode_md5(str(Path(target).resolve()).lower())
         self.timeout = timeout
 
     def __enter__(self):

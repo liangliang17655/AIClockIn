@@ -38,12 +38,13 @@ def selftest(report):
 def main():
     parser = argparse.ArgumentParser(description='AIClockIn 本地核心签到')
     modes = parser.add_mutually_exclusive_group()
-    for option in ('silent', 'status', 'add-workbuddy', 'add-trae', 'auto-on', 'auto-off', 'self-test', 'install'):
+    for option in ('silent', 'status', 'add-workbuddy', 'add-trae', 'auto-on', 'auto-off', 'self-test', 'install', 'uninstall-task'):
         modes.add_argument('--' + option, action='store_true')
     parser.add_argument('--data', type=Path)
     parser.add_argument('--account')
     parser.add_argument('--report', type=Path)
     modes.add_argument('--apply-update', type=Path)
+    modes.add_argument('--apply-setup', type=Path)
     parser.add_argument('--wait-pid', type=int, default=0)
     parser.add_argument('--wait-parent', type=int, default=0)
     args = parser.parse_args()
@@ -52,6 +53,13 @@ def main():
         raise ValueError('报告只能写入 D 盘')
     if args.self_test:
         return selftest(args.report)
+    from aiclockin.package import data_root, register_running
+    if args.uninstall_task:
+        from aiclockin.setup_support import remove_own_task
+        return remove_own_task(Path(sys.executable),args.data or data_root(home()))
+    if args.apply_setup:
+        from aiclockin.setup_update import run_helper
+        return run_helper(args.apply_setup,args.wait_pid)
     if args.apply_update:
         from aiclockin.update_apply import run_helper
         return run_helper(args.apply_update, args.wait_pid, args.wait_parent)
@@ -59,21 +67,27 @@ def main():
         from aiclockin.update_apply import UpdateGate, pending, launch_helper
         with UpdateGate(Path(sys.executable)):
             interrupted = pending(Path(sys.executable))
+            from aiclockin import setup_update
+            setup_interrupted=setup_update.pending(Path(sys.executable))
+            if not interrupted and not setup_interrupted:
+                register_running(Path(sys.executable))
+        if setup_interrupted:
+            if setup_update.active(setup_interrupted):return 2
+            if any((args.silent,args.status,args.add_workbuddy,args.add_trae,args.auto_on,args.auto_off)):return 2
+            import os
+            setup_update.launch_helper(setup_interrupted,os.getpid())
+            return 0
         if interrupted:
             if any((args.silent, args.status, args.add_workbuddy, args.add_trae, args.auto_on, args.auto_off)):
                 return 2  # Do not use real accounts while an interrupted update needs recovery.
             import os
             launch_helper(interrupted, os.getpid())
             return 0
-    from aiclockin.installer import needs_install, run as install_app
-    gui = not any((args.silent, args.status, args.add_workbuddy, args.add_trae, args.auto_on, args.auto_off))
-    if args.install or needs_install(Path(sys.executable), frozen=getattr(sys, 'frozen', False), gui=gui, data=args.data):
-        if not getattr(sys, 'frozen', False):
-            raise ValueError('安装功能请使用打包后的 EXE')
-        return install_app(Path(sys.executable), args.data)
+    if args.install:
+        raise ValueError('请运行 AIClockInSetup.exe 安装包')
     from aiclockin.store import Store, Busy, write_json
     from aiclockin.service import Service
-    store = Store(args.data or home() / 'data')
+    store = Store(args.data or data_root(home()))
     worker = any((args.silent, args.status, args.add_workbuddy, args.add_trae, args.auto_on, args.auto_off))
     try:
         service = Service(store)

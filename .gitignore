@@ -22,3 +22,10 @@ venv/
 build/
 dist/
 *.exe
+
+# 本地安装生成文件（不作为源码提交）
+_runtime-v*/
+bundle-manifest.json
+install-info.ini
+unins*.dat
+unins*.msg
