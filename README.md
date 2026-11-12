@@ -2,9 +2,9 @@
 
 ## 下载软件
 
-**[点击下载 AIClockIn 自动签到 Windows版本安装包](https://raw.githubusercontent.com/liangliang17655/AIClockIn/main/AIClockInSetup.exe)**
+**[点击下载 AIClockIn 自动签到 Windows版本安装包](https://raw.githubusercontent.com/liangliang17655/AIClockIn/9872aaaabfe020991867c40ff80d90785cf2e589/AIClockInSetup.exe)**
 
-下载的是带安装向导的 `AIClockInSetup.exe`，无需拉取代码或安装 Python。
+当前下载版本：**v0.4.1**。点击上方链接直接下载带安装向导的 `AIClockInSetup.exe`，无需拉取代码或安装 Python。
 
 适用于 Windows 64 位系统，提供 WorkBuddy 多账号管理与依次签到，以及 Trae CN 签到功能。
 

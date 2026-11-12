@@ -139,3 +139,10 @@ TASK-009 远程结果：功能提交 `1a4400b` 已快进合入并推送 origin/m
 命令与结果：python -B tests/verify_inno_windows.py --reuse-bundle 新增卸载换目录重装读取原账号/历史与数据哈希不变通过，已有安装/升级/失败恢复/任务/卸载清理继续通过；python -B -m unittest discover -s tests -q：72项通过。release.ps1 -Bundle dist/test-bundle/v0.4.1/AIClockIn：exit0，自检版本0.4.1与编译通过。复用先前验证过的同源码0.4.1完整目录，不重复构建未变化Python核心。
 
 Setup SHA256：63616502fc03b367b0bd98583be326a529c37602c3aa558d9391c90945e10016。未执行真实签到。未发布GitHub正式Release，未重新运行未改变的完整更新辅助链路；当前运行应用代码不变，仅安装器修复。用户手动删除原data、换Windows用户/机器不保证恢复。后续以提交记录确认远程分发；不将本机配置、账号或登记数据上传。
+
+
+## TASK-011 · 2026-11-12 · 修正远程 README 下载入口
+
+用户要求 GitHub 页面下载入口也为最新版。根安装包已在9872aaa上传，但 main 原始文件地址曾返回旧0.4.0缓存。将 README 下载链接改为完整提交9872aaaabfe020991867c40ff80d90785cf2e589对应的0.4.1 Setup，注明当前版本；RELEASING要求后续每次上传安装包后更新README已验证提交地址。只修改 README、RELEASING、TASKS、CHANGELOG、HANDOFF，不改程序或用户数据。
+
+验证：该固定地址先前实际 HTTP200，13,848,240字节，SHA256 63616502fc03b367b0bd98583be326a529c37602c3aa558d9391c90945e10016，与本地修正版一致；本次检查文案与 git diff --check，并在推送后核对远程README。文档修改不重复构建/运行程序测试。未创建正式Release；未来新版仍须按发布步骤同步README，不声称固定提交URL会自动变化。
