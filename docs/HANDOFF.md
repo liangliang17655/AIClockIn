@@ -115,3 +115,27 @@ TASK-001，2026-11-11：独立应用 v0.1.0 已交付。仓库 D:/个人开发�
 
 
 TASK-009 远程结果：功能提交 `1a4400b` 已快进合入并推送 origin/main，ls-remote 核对一致。README 固定 Setup 直链 HTTP 200，13,848,776 字节，SHA256 与 TASK-008 本地产物一致。暂存检查未包含 data、安装依赖、卸载元数据或本地已安装 AIClockIn.exe 改动；后者保留工作区未提交。未创建正式 Release，线上自动更新仍待发布后验证。
+
+
+## TASK-010 · 2026-11-12 · 卸载重装后账号不可见与添加提示排查
+
+状态：数据路径已本机恢复；添加提示原因仍待用户复现确认，未声称已修复。
+
+事实：旧项目 data/accounts.json 中3个账号仍在，并能由当前用户解密；新安装 D:/AIClockIn/install-info.ini 指向 D:/AIClockIn/data，后者没有 accounts.json。不是已证实的账号删除，而是安装位置变化后读取了新目录。两处 operation.lock 均可实际获取，未发现持续占用。安装版在独立合成空目录执行 --silent 可取得锁并如实返回“请先添加并启用至少一个账号”；没有请求真实平台。
+
+修复：备份 D:/AIClockIn/install-info.ini 到 D:/个人开发软件/AI工作区/temp/AIClockIn/recovery/20261112-100153/；将其 Data/Directory 改回原项目 data，调整已有且目标匹配 D:/AIClockIn/AIClockIn.exe 的桌面链接数据参数，正常关闭/重开GUI。原目录所有数据文件哈希修改前后完全一致，3个账号解密验证通过；新目录不删除，未迁移/覆盖账户，未修改签到任务和源码。系统集成变更按用户故障修复请求执行，路径未进入公开日志。
+
+实际验证：数据目录解析、3个账号解密、数据文件SHA256不变、两个目录OS字节锁探测、安装版隔离空账号 --silent（exit1真实无账号提示）通过。未执行真实签到或账号授权；原GUI重新打开后账号可见性及添加操作等待用户确认。后续需复现添加操作的具体平台和进程状态，再针对根因补回归；不直接删除锁或强杀进程。
+
+
+### TASK-010 最终修复与验证
+
+用户确认“账号恢复了，添加也正常”。没有证据表明持久锁残留，未删除锁/改写并发控制；不能保证真实操作并发时永不出现 Busy。
+
+针对再次卸载重装：真实隔离测试先在旧脚本复现“Reinstall forgot retained account directory”，再修改 installer/AIClockIn.iss：健康检查通过后保存当前用户数据路径到独立 HKCU Software/AppId；卸载保留此值；重装仅复用仍有账号或历史文件的 D 盘目录，显式 /DATA 优先。不复制/覆盖用户数据、不扫描全盘。当前用户已验证旧路径也已登记，本机匹配目标的桌面/开始菜单入口指向原数据。
+
+版本0.4.1；修改 VERSION、installer/AIClockIn.iss、tests/verify_inno_windows.py、tests/test_installer.py、README、RELEASING、TASKS、HANDOFF、CHANGELOG及根Setup。旧单元测试假设 D:/AIClockIn 尚未安装，在本机安装后失败；将其默认目录改为独立临时夹，未改变产品行为。
+
+命令与结果：python -B tests/verify_inno_windows.py --reuse-bundle 新增卸载换目录重装读取原账号/历史与数据哈希不变通过，已有安装/升级/失败恢复/任务/卸载清理继续通过；python -B -m unittest discover -s tests -q：72项通过。release.ps1 -Bundle dist/test-bundle/v0.4.1/AIClockIn：exit0，自检版本0.4.1与编译通过。复用先前验证过的同源码0.4.1完整目录，不重复构建未变化Python核心。
+
+Setup SHA256：63616502fc03b367b0bd98583be326a529c37602c3aa558d9391c90945e10016。未执行真实签到。未发布GitHub正式Release，未重新运行未改变的完整更新辅助链路；当前运行应用代码不变，仅安装器修复。用户手动删除原data、换Windows用户/机器不保证恢复。后续以提交记录确认远程分发；不将本机配置、账号或登记数据上传。

@@ -53,6 +53,7 @@ def main():
     import argparse
     parser=argparse.ArgumentParser();parser.add_argument('--reuse-bundle',action='store_true');args=parser.parse_args()
     prepare();OUTPUT.mkdir(parents=True,exist_ok=True)
+    project_version=(BASE/'VERSION').read_text().strip()
     token=uuid.uuid4().hex[:12];app_id='AIClockIn-Test-'+token;link_name=app_id
     key_name=r'Software\Microsoft\Windows\CurrentVersion\Uninstall'+chr(92)+app_id+'_is1'
     task=WindowsTask('AIClockIn-InnoTest-'+token)
@@ -65,7 +66,7 @@ def main():
     a=compile_setup(bundle_a,'0.4.0',app_id,link_name)
     b=compile_setup(bundle_b,'0.4.1',app_id,link_name)
     failed=compile_setup(bundle_b,'0.4.1',app_id,link_name,True)
-    result={'app_id':app_id,'task':task.name,'project_version_unchanged':(BASE/'VERSION').read_text().strip()=='0.4.0'}
+    result={'app_id':app_id,'task':task.name,'project_version_unchanged':True}
     with tempfile.TemporaryDirectory(prefix='inno-install-') as folder:
         folder=Path(folder);installed=folder/'installed';data=installed/'custom-data';exe=installed/'AIClockIn.exe'
         options=['/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/NOCLOSEAPPLICATIONS','/DIR='+str(installed),'/DATA='+str(data),'/GROUP='+link_name,'/TASKS=desktopicon']
@@ -112,12 +113,28 @@ def main():
                 raise AssertionError('Uninstall key remains')
             except FileNotFoundError:pass
             result.update({'repeat_install_preserved':True,'uninstall_keeps_data_history':True,'uninstall_removes_links_registration':True})
+            # Reinstall elsewhere with no /DATA after uninstall: recover retained data.
+            relocated=folder/'reinstalled';relocated_exe=relocated/'AIClockIn.exe'
+            assert run([b,'/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/DIR='+str(relocated),
+                        '/GROUP='+link_name,'/TASKS=desktopicon'],folder/'reinstall-process.log')==0
+            uninstall=next(relocated.glob('unins*.exe'))
+            from aiclockin.package import data_root
+            assert data_root(relocated)==data,'Reinstall forgot retained account directory'
+            assert Store(data_root(relocated)).accounts()==rows and before==snapshot(data)
+            assert str(data) in read_link(desktop)['arguments']
+            assert run([uninstall,'/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART'],folder/'reinstall-uninstall.log')==0
+            assert before==snapshot(data)
+            result['uninstall_reinstall_elsewhere_recovers_accounts']=True
+
         finally:
             close_app(exe)
             if task.get() is not None:task.remove()
             if uninstall and uninstall.exists():run([uninstall,'/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART'],OUTPUT/'cleanup-uninstall.log')
+            try:winreg.DeleteKey(winreg.HKEY_CURRENT_USER,'Software'+chr(92)+app_id)
+            except FileNotFoundError:pass
             result['temporary_task_cleaned']=task.get() is None;write_json(OUTPUT/'inno-windows.json',result)
             for p in folder.glob('*.log'):shutil.copyfile(p,OUTPUT/p.name)
+    assert (BASE/'VERSION').read_text().strip()==project_version
     print(json.dumps(result,ensure_ascii=False))
 
 

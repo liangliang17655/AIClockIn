@@ -30,7 +30,9 @@ class InstallerTests(unittest.TestCase):
         self.assertFalse(i.needs_install(self.source, frozen=True, gui=True))
 
     def test_default_and_existing_location_no_migration(self):
-        self.assertEqual(i.location(self.source, task=None), (Path('D:/AIClockIn'), Path('D:/AIClockIn/data'), False))
+        default = self.folder / 'fresh-default'
+        with patch.object(i, 'DEFAULT', default):
+            self.assertEqual(i.location(self.source, task=None), (default, default/'data', False))
         data = self.folder / 'private data'; Store(data).save_accounts([])
         self.assertEqual(i.location(self.source, data=data), (self.source.parent, data, True))
 

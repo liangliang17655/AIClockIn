@@ -64,3 +64,21 @@
 用户明确授权提交并推送远程。更新 README 的原生安装包直链、安装及旧版迁移说明；补充 .gitignore 排除本地安装依赖和卸载元数据。发布已验证的根 AIClockInSetup.exe，不提交本地已安装的 AIClockIn.exe 改动、data 或运行目录。TASK-008 的源码、测试及文档一起交付。远程核对 origin/main 基线仍为 9843ae8，无新增远程提交。
 
 验证沿用 TASK-008 最新72项回归及原生安装/更新测试（业务代码未再改动）；本次执行 git diff --check、暂存清单检查、安装包 SHA256、远程提交核对与直链下载校验。未创建正式 Release；软件内线上更新仍待正式发布后验证。提交/推送结果以 Git 历史和最终交付报告为准。
+
+
+## TASK-010 · 2026-11-12 · 本机故障恢复
+
+修复本机新安装读取空数据目录的配置，原3个账号仍在且未修改；未修改源码/安装包、未提交推送。添加 Busy 尚未复现，不能标记已修复；验证和回退路径见 HANDOFF。
+
+
+### TASK-010 最终修复与验证
+
+用户确认“账号恢复了，添加也正常”。没有证据表明持久锁残留，未删除锁/改写并发控制；不能保证真实操作并发时永不出现 Busy。
+
+针对再次卸载重装：真实隔离测试先在旧脚本复现“Reinstall forgot retained account directory”，再修改 installer/AIClockIn.iss：健康检查通过后保存当前用户数据路径到独立 HKCU Software/AppId；卸载保留此值；重装仅复用仍有账号或历史文件的 D 盘目录，显式 /DATA 优先。不复制/覆盖用户数据、不扫描全盘。当前用户已验证旧路径也已登记，本机匹配目标的桌面/开始菜单入口指向原数据。
+
+版本0.4.1；修改 VERSION、installer/AIClockIn.iss、tests/verify_inno_windows.py、tests/test_installer.py、README、RELEASING、TASKS、HANDOFF、CHANGELOG及根Setup。旧单元测试假设 D:/AIClockIn 尚未安装，在本机安装后失败；将其默认目录改为独立临时夹，未改变产品行为。
+
+命令与结果：python -B tests/verify_inno_windows.py --reuse-bundle 新增卸载换目录重装读取原账号/历史与数据哈希不变通过，已有安装/升级/失败恢复/任务/卸载清理继续通过；python -B -m unittest discover -s tests -q：72项通过。release.ps1 -Bundle dist/test-bundle/v0.4.1/AIClockIn：exit0，自检版本0.4.1与编译通过。复用先前验证过的同源码0.4.1完整目录，不重复构建未变化Python核心。
+
+Setup SHA256：63616502fc03b367b0bd98583be326a529c37602c3aa558d9391c90945e10016。未执行真实签到。未发布GitHub正式Release，未重新运行未改变的完整更新辅助链路；当前运行应用代码不变，仅安装器修复。用户手动删除原data、换Windows用户/机器不保证恢复。后续以提交记录确认远程分发；不将本机配置、账号或登记数据上传。

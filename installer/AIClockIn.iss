@@ -138,6 +138,12 @@ begin
   ExistingData := ExpandConstant('{param:DATA|}');
   if (ExistingData <> '') and (CompareText(Copy(ExpandFileName(ExistingData),1,3),'D:\') <> 0) then begin Result := False; exit; end;
   if ExistingData<>'' then exit;
+  { Remember only this Windows user's data location across uninstall/reinstall. }
+  if RegQueryStringValue(HKCU64,'Software\{#AppId}','DataDirectory',ExistingData) then begin
+    if (CompareText(Copy(ExpandFileName(ExistingData),1,3),'D:\')=0) and
+       (FileExists(AddBackslash(ExistingData)+'accounts.json') or FileExists(AddBackslash(ExistingData)+'history.db')) then exit;
+    ExistingData:='';
+  end;
   try
     Service := CreateOleObject('Schedule.Service'); Service.Connect;
     Task := Service.GetFolder('\').GetTask('AIClockIn-Auto');
@@ -229,6 +235,8 @@ begin
 #ifdef ForceHealthFailure
     RaiseException('Isolated test: health failure');
 #endif
+      if not RegWriteStringValue(HKCU64,'Software\{#AppId}','DataDirectory',DataDirectory('')) then
+        RaiseException('无法保存当前用户的数据目录，请检查 Windows 用户权限。');
       InstallOK := True;
     except
       InstallFailure:='新版本检查失败。退出安装向导后将恢复原程序；账号和记录保留。';
