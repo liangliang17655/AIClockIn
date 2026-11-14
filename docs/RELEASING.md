@@ -1,5 +1,17 @@
 # v0.4.0 起的打包与发布
 
+## v0.5.0 发布前流程（本轮不执行发布）
+
+1. 在开发分支检查差异、测试、敏感信息扫描与安装产物。合并 main 前核对本机验收和跨电脑未验证项，确认发布条件；不要把“本机通过”写成全环境通过。
+2. 将经过确认的开发分支合并 main 后，核对 VERSION=0.5.0、源码提交和安装包的对应关系，再创建指向该提交的 v0.5.0 标签。不要在未确认的提交上先打标签或发布。
+3. 打开仓库 Releases → Draft a new release，选择 v0.5.0，标题“AIClockIn v0.5.0”，正文使用 docs/releases/v0.5.0.md。
+4. 从 dist/release/v0.5.0 上传 AIClockIn-v0.5.0-Setup-windows-x64.exe、SHA256SUMS.txt；可附相同内容的 AIClockInSetup.exe 固定别名和 INSTALLATION.md。不要上传 data、数据库、账号、日志、源码 ZIP 或整个 dist。
+5. 核对附件 SHA256、大小、标签和正文，确认用户批准发布后才点击 Publish release；正式发布不勾选 Pre-release，检查其被设置为 Latest。
+6. 发布后再将 README 下载地址改为 `https://github.com/liangliang17655/AIClockIn/releases/latest/download/AIClockInSetup.exe`，必须先确认固定别名附件真实存在。当前 README 的旧下载地址不冒充新版本。
+7. 用发布前旧版进行真实检查→说明→HTTPS下载→SHA256→辅助安装→重启验收，再记录公网完整链路结果。无 Release 时应显示未发布，不是已是最新。不得为解决限流把个人 Token 放入客户端。
+
+发布状态与真实证据见 [v0.5.0 发布准备](RELEASE-0.5.0-READINESS.md)，其他电脑清单见 [安装验收](INSTALL-ACCEPTANCE-0.5.0.md)。下方旧版“提交根目录安装包并用 raw 下载”的说明为历史工作方式，v0.5.0 正式发布优先使用 Releases 附件。
+
 用户批准 PyInstaller 文件夹版 + Inno Setup 原生安装包。应用仍为 Python/Tkinter；Setup 当前用户安装，默认 D:\AIClockIn，提供目录选择、桌面/开始菜单与卸载。已有安装沿用原路径，数据不迁移。
 
 ## 构建

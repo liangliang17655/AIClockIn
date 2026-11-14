@@ -28,12 +28,41 @@ class Updates(unittest.TestCase):
             self.assertEqual(opened.call_count, 3)
         missing = HTTPError(u.API, 404, 'missing', {}, None)
         self.addCleanup(missing.close)
-        with patch.object(u, 'open_url', side_effect=missing):
+        with patch.object(u, 'open_url', side_effect=lambda url: (_ for _ in ()).throw(missing)
+                          if url == u.API else io.BytesIO(b'{"private":false}')):
             with self.assertRaises(u.NoRelease):
                 u.check('0.1.0')
         context = u.ssl.create_default_context()
         self.assertTrue(context.check_hostname)
         self.assertEqual(context.verify_mode, u.ssl.CERT_REQUIRED)
+
+    def test_primary_rate_limit_is_distinct_and_not_retried(self):
+        error = HTTPError(u.API, 403, 'forbidden', {'X-RateLimit-Remaining': '0',
+                         'X-RateLimit-Reset': '1794659800'}, io.BytesIO(b'{"message":"API rate limit exceeded"}'))
+        with patch.object(u, 'open_url', side_effect=error) as opened:
+            with self.assertRaisesRegex(u.RateLimited, '限流'):
+                u.check('0.5.0')
+        self.assertEqual(opened.call_count, 1)
+
+    def test_permission_and_secondary_limit_are_distinct(self):
+        for code, headers, body, expected in [
+            (403, {}, b'{"message":"Forbidden"}', u.AccessDenied),
+            (401, {}, b'{"message":"Bad credentials"}', u.AccessDenied),
+            (403, {'Retry-After': '60'}, b'{"message":"secondary rate limit"}', u.RateLimited),
+            (429, {}, b'not-json', u.RateLimited),
+        ]:
+            with self.subTest(code=code, headers=headers):
+                error = HTTPError(u.API, code, 'test', headers, io.BytesIO(body))
+                with patch.object(u, 'open_url', side_effect=error):
+                    with self.assertRaises(expected):
+                        u.check('0.5.0')
+
+    def test_latest_404_does_not_hide_unavailable_repository(self):
+        error = HTTPError(u.API, 404, 'missing', {}, io.BytesIO(b'{}'))
+        with patch.object(u, 'open_url', side_effect=error):
+            with self.assertRaisesRegex(u.UpdateError, '仓库') as caught:
+                u.check('0.5.0')
+        self.assertNotIsInstance(caught.exception, u.NoRelease)
 
     def test_cancel_and_truncated_download(self):
         item = u.parse_release(release(digest='sha256:' + 'a'*64), '0.1.0')

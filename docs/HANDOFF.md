@@ -174,3 +174,40 @@ Setup SHA256：63616502fc03b367b0bd98583be326a529c37602c3aa558d9391c90945e10016�
 
 
 TASK-013 远程分发：修复与安装包提交 `2f263c2` 已推送 origin/main；固定提交下载 HTTP200，13,855,332字节，SHA256 65da9bdae4c7dca82b186e37942f4567147567ec3bd2c46f3985c237da7b4ae0，与最终本地Setup一致。README版本和下载链接同步v0.4.2，避免main缓存旧包。未创建正式Release，等待对方电脑复测；本机生产安装没有被自动替换。
+
+
+## TASK-014 · 2026-11-14 · 豆包工作最小可行性验证
+
+用户批准分阶段推进，最终目标包含自动签到、额度及记录；本轮自动领取不实施。实际核查官方应用插件登录/API范围、Android SAEP适用边界及本机签名客户端只读可访问性。用户确认已登录后，UIA主窗仅4个后代、全部目标窗口复查为4/14个后代，均未取得账号/签到/余额文本；MSAA根入口可用但未取得业务数据。活动/额度页身份尚待用户确认，不声称所有页面已验证失败。官方公开文档范围也未找到个人奖励查询渠道。
+
+结论：未通过实施门槛，暂不增加GUI/账号项/空平台实现。后续query/claim能力隔离契约与去重要求已写入docs/DOUBAOWORK-FEASIBILITY.md，长期目标保留。实际修改仅该验证文档、PROJECT/TASKS/HANDOFF/CHANGELOG。未读凭据、未设置调试端口、未发领取请求、未改现有核心/数据/任务/安装包、未提交推送。
+
+验证命令/结果：git status接入干净；Get-CimInstance/Get-Process及文件签名元数据只读检查通过；System.Windows.Automation定向探测返回外壳控件，无可用业务字段；AccessibleObjectFromWindow返回0仅根层可用。详细探针边界及一次.NET属性探针错误均如实记在可行性文档。证据在D工作区outputs/AIClockIn-validation/doubaowork，未记录账号秘密。业务代码未变，未运行全量测试/构建。风险：UI数据和平台许可均未核实；下一步继续已登录官方活动页验证，失败则按文档给出的官方支持/可访问性路线，不伪造查询完成。
+
+
+TASK-014 收尾补充：用户回复“找不到活动入口”。本轮未通过接入门槛，活动页实际读取未执行，不把该事实解释为登录失效/已签到/无活动资格。当前不再等待页面打开；未来取得官方接口/授权或可访问性支持、定位实际入口后重新验证。仅更新验证文档与任务/交接记录，原软件及安装包不变；未提交推送。
+
+
+TASK-014 current recheck (2026-11-14): entry found and manual claim confirmed by user; actual app 2.36.15 and running process verified. Business read source remains unverified; UI connection unavailable. No implementation or package changes. Current evidence, changed files, validation limits and next steps: docs/DOUBAOWORK-RECHECK.md (DOUBAOWORK-RECHECK.md from docs/).
+
+
+## TASK-015 (2026-11-14): Windows UIA read-only connection diagnosis
+
+Completed connection diagnosis and real UI read verification, not provider integration. CUA host remains unavailable; native UIA Raw View reads real campaign and quota documents. Campaign cumulative=200; activity bonus used=0/200, remaining=200, repeated reads agree. Stable identity, explicit today-claimed state and actual daily receipt remain unverified. No core/database/task/package changes. Files: docs/DOUBAOWORK-UIA-DIAGNOSTICS.md, DOUBAOWORK-RECHECK.md, TASKS/HANDOFF/PROJECT/CHANGELOG; standalone probe/evidence under D workspace outputs. Validation commands, probe corrections, risk and next step are in the diagnostics report; no mock or real auto-claim tests, no build/commit/push. Next: verify account binding and explicit daily status before provider integration.
+
+
+## TASK-016 (2026-11-14): DoubaoWork read-only quota implementation
+
+Implemented Python/system-PowerShell UIA Raw View module and Tk quota panel; main account list includes an unbound read-only session. Each query records a distinct UUID in existing SQLite, preserving unknown values and encrypted accounts. No provider/scheduler/schema/installer/update changes; selfcheck assertion now includes the synthetic read-only row. Real campaign=200, real quota total=200/used=0/remaining=200 with expiry; minimized read passed and window restored. GUI/Store reopen verified using isolated data. Full unittest regression: 89 passed; final GUI-only: 1 passed; diff check passed. Lock screen, real scheduled tasks, closed client, slow page and other computers not live-verified; mocks are not real sign-in proof. No claim, package build, commit or push. Files, exact commands, screenshots, risks and next steps: docs/DOUBAOWORK-IMPLEMENTATION.md (DOUBAOWORK-IMPLEMENTATION.md from docs/). Next: stable account identity and explicit daily status, then separately validate packaging/background environments.
+
+
+## TASK-017 (2026-11-14): DoubaoWork hardening and v0.5.0 installer
+
+Built v0.5.0 onedir EXE and Inno Setup; desktop access guards and safe UIA error type/stage/codes added. Visible account handle is only a candidate, not verified stable identity; daily state remains unknown. 91 regression tests pass. Real normal/minimized quota reads, user-assisted lock-screen Win32 5 failure/NULL record, isolated native install/rollback/dependency diagnostics/shortcuts, actual scheduled EXE, local full-runtime helper update/restart/restore all verified. GitHub latest check HTTP403: online update unverified. Complete client exit test remains pending; other-PC compatibility unverified. No production data/task/core/schema/update logic changes, no upload/commit/push. Detailed files, commands, results, hashes, evidence and next steps: docs/DOUBAOWORK-RELEASE-VALIDATION.md (local docs: DOUBAOWORK-RELEASE-VALIDATION.md).
+
+TASK-017 final addendum: real client exit was captured (multiple samples, independently zero DoubaoWork processes). Failure/NULL result persisted through the same record path in isolated SQLite; no false login/claim status. Probe stopped without restarting client. This supersedes the pending exit-test note above. Other-PC and online GitHub update remain unverified.
+
+
+## TASK-018 (2026-11-14): v0.5.0 release readiness
+
+Confirmed GitHub primary anonymous IP rate limit (60/0), classified limit/access/network/no-release/latest safely; after reset real latest404 + public repo200 yields NoRelease. No client token or proxy change. 95 regression tests pass; final candidate rebuilt with SHA256 2b8f6ab38b506acd584fcf73edc178ce5fbff7150de9238ef06bbb2a8317695a. Re-ran native install/rollback/dependency/shortcut checks, real scheduled EXE and helper update/restart/restore with both platform disabled synthetic accounts and history preserved. Cross-PC and online published-release full chain remain unverified. Sources/history/artifact audit and release notes/install checklist prepared. Development branch local commit only; no main merge, push, tag or GitHub Release. Full files, commands, limits and next steps: docs/RELEASE-0.5.0-READINESS.md (from docs: RELEASE-0.5.0-READINESS.md).

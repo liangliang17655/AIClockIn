@@ -22,10 +22,21 @@ class GuiTest(unittest.TestCase):
             try:
                 app = App(root, store)
                 root.update()
-                self.assertEqual(len(app.accounts.get_children()), 1)
+                self.assertEqual(len(app.accounts.get_children()), 2)
+                self.assertIn('账号身份待确认', app.accounts.item('doubaowork-current-session', 'values')[1])
                 self.assertEqual(len(app.history.get_children()), 1)
                 self.assertNotIn('private-token', str(app.accounts.item('a', 'values')))
                 self.assertIn('示例账号', app.accounts.item('a', 'values'))
+                app.accounts.selection_set('doubaowork-current-session')
+                app.query()
+                root.update()
+                dialog = app.doubao_window
+                self.assertEqual(dialog.values['binding'].get(), '账号身份待确认')
+                self.assertEqual(dialog.values['checkin'].get(), '状态未知')
+                app.toggle()
+                self.assertEqual(store.accounts()[0]['id'], 'a')
+                self.assertEqual(len(store.accounts()), 1)
+                dialog.close()
             finally:
                 root.destroy()
 

@@ -18,10 +18,13 @@ from aiclockin.schedule import TaskManager,WindowsTask
 from tests.verify_inno_windows import ISCC,BASE,run,snapshot
 
 OUTPUT=Path('D:/个人开发软件/AI工作区/outputs/AIClockIn-validation/install-diagnostics')
-BUNDLE=BASE/'dist/bundle/v0.4.2/AIClockIn'
+VERSION=(BASE/'VERSION').read_text('utf-8').strip()
+BUNDLE=BASE/f'dist/bundle/v{VERSION}/AIClockIn'
+BASELINE=BASE/'dist/bundle/v0.4.2/AIClockIn'
 
 
-def compile_setup(bundle,app_id,name,version='0.4.2',timeout=90000):
+def compile_setup(bundle,app_id,name,version=None,timeout=90000):
+    version=version or VERSION
     runtime=json.loads((bundle/'bundle-manifest.json').read_text('utf-8'))['runtime']
     code=run([ISCC,'/DAppVersion='+version,'/DRuntimeDir='+runtime,'/DBundleDir='+str(bundle),
               '/DReleaseDir='+str(OUTPUT),'/DAppId='+app_id,'/DShortcutName='+app_id,
@@ -36,8 +39,9 @@ def main():
     result={};task=WindowsTask(app_id)
     with tempfile.TemporaryDirectory(prefix='install-diagnostics-') as folder:
         folder=Path(folder);target=folder/'中文 app';data=folder/'private data';exe=target/'AIClockIn.exe'
-        baseline=folder/'baseline';copy_bundle(Path('D:/AIClockIn'),baseline)
-        prior=compile_setup(baseline,app_id,'baseline',version='0.4.1')
+        baseline=folder/'baseline';copy_bundle(BASELINE,baseline)
+        baseline_version=json.loads((baseline/'bundle-manifest.json').read_text('utf-8'))['version']
+        prior=compile_setup(baseline,app_id,'baseline',version=baseline_version)
         good=compile_setup(BUNDLE,app_id,'healthy')
         timeout=compile_setup(BUNDLE,app_id,'timeout',timeout=1)
         mismatch=compile_setup(BUNDLE,app_id,'version-mismatch',version='9.9.9')
@@ -53,7 +57,7 @@ def main():
             TaskManager(data,exe,task).enable();xml=ET.tostring(ET.fromstring(task.get()))
             before=snapshot(data);old=file_hash(exe)
             assert run([timeout,*options],OUTPUT/'timeout.log')==10
-            assert file_hash(exe)==old, 'rollback executable differs from 0.4.1'
+            assert file_hash(exe)==old, 'rollback executable differs from baseline'
             assert before==snapshot(data), 'data changed: '+str([k for k in set(before)|set(snapshot(data)) if before.get(k)!=snapshot(data).get(k)])
             logs=[p.read_text('utf-8-sig') for p in target.glob('diagnostics/*/install.log')]
             assert any('超时' in s and '1 ms' in s for s in logs)
@@ -61,16 +65,16 @@ def main():
             assert run([mismatch,*options],OUTPUT/'version-mismatch.log')==10
             logs=[p.read_text('utf-8-sig') for p in target.glob('diagnostics/*/install.log')]
             assert any('期望 9.9.9' in s for s in logs)
-            assert file_hash(exe)==old, 'rollback executable differs from 0.4.1'
+            assert file_hash(exe)==old, 'rollback executable differs from baseline'
             assert before==snapshot(data), 'data changed: '+str([k for k in set(before)|set(snapshot(data)) if before.get(k)!=snapshot(data).get(k)])
             assert ET.tostring(ET.fromstring(task.get()))==xml
             assert Store(data).accounts()==rows
             result['version_mismatch_rollback_and_task_unchanged']=True
             assert run([good,*options],OUTPUT/'healthy.log')==0
             assert before==snapshot(data)
-            report=next(p for p in target.glob('diagnostics/*/health.json') if json.loads(p.read_text('utf-8')).get('ok') and json.loads(p.read_text('utf-8')).get('version')=='0.4.2')
+            report=next(p for p in target.glob('diagnostics/*/health.json') if json.loads(p.read_text('utf-8')).get('ok') and json.loads(p.read_text('utf-8')).get('version')==VERSION)
             health=json.loads(report.read_text('utf-8'))
-            assert health['ok'] and health['version']=='0.4.2'
+            assert health['ok'] and health['version']==VERSION
             assert Path(health['work']).is_relative_to(report.parent)
             assert '个人开发软件' not in str(report.relative_to(target))
             result['native_success_report_on_d']=True
@@ -138,5 +142,6 @@ def verify_shortcuts():
 
 
 if __name__=='__main__':
+    OUTPUT=OUTPUT/('v'+VERSION)
     if '--shortcuts-only' in sys.argv:verify_shortcuts()
     else:main()

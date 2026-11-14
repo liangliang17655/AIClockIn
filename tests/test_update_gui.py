@@ -7,7 +7,7 @@ import time
 
 from aiclockin.store import Store
 from aiclockin.gui import App
-from aiclockin.update import Release, ROOT, UpdateError
+from aiclockin.update import Release, ROOT, UpdateError, NoRelease, RateLimited
 
 
 class UpdateGuiTests(unittest.TestCase):
@@ -41,6 +41,16 @@ class UpdateGuiTests(unittest.TestCase):
              patch('aiclockin.update_gui.messagebox.askretrycancel', return_value=False) as retry:
             self.app.updates.check(True); self.drain(); retry.assert_called_once()
         self.assertFalse(self.app.updates.checking)
+
+    def test_no_release_is_informational_and_limit_does_not_offer_immediate_retry(self):
+        for error, method in ((NoRelease('尚未发布正式 Release'), 'showinfo'), (RateLimited('限流'), 'showwarning')):
+            with self.subTest(error=type(error).__name__), \
+                 patch('aiclockin.update_gui.check', side_effect=error), \
+                 patch('aiclockin.update_gui.messagebox.' + method) as shown, \
+                 patch('aiclockin.update_gui.messagebox.askretrycancel') as retry:
+                self.app.updates.check(True); self.drain()
+                shown.assert_called_once()
+                retry.assert_not_called()
 
     def test_remote_notes_and_progress(self):
         item = Release('v0.2.0', '远程发布说明\n修复例子', 'name.exe', '', 100, None, None)

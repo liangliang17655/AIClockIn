@@ -8,7 +8,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import uuid
 
-from .update import ROOT, check, download, expected_hash, UpdateError
+from .update import ROOT, check, download, expected_hash, UpdateError, NoRelease, RateLimited
 from .update_apply import create_transaction, launch_helper
 from .store import write_json
 from .version import current
@@ -84,7 +84,7 @@ class UpdateUI:
             try:
                 self.send('checked', (manual, check(current()), None))
             except Exception as exc:
-                self.send('checked', (manual, None, str(exc) if isinstance(exc, UpdateError) else '检查更新失败，请稍后重试'))
+                self.send('checked', (manual, None, exc if isinstance(exc, UpdateError) else '检查更新失败，请稍后重试'))
         threading.Thread(target=run, daemon=True).start()
 
     def handle(self, kind, value):
@@ -101,8 +101,13 @@ class UpdateUI:
             manual, item, error = value
             if error:
                 if manual:
-                    self.app.notice.set(error)
-                    if messagebox.askretrycancel('检查更新失败', error, parent=self.root):
+                    text = str(error)
+                    self.app.notice.set(text)
+                    if isinstance(error, NoRelease):
+                        messagebox.showinfo('尚未发布正式版本', text, parent=self.root)
+                    elif isinstance(error, RateLimited):
+                        messagebox.showwarning('GitHub 请求限流', text, parent=self.root)
+                    elif messagebox.askretrycancel('检查更新失败', text, parent=self.root):
                         self.check(True)
             elif item:
                 self.show_release(item)

@@ -1,5 +1,6 @@
 """Anonymous official Releases only; verified HTTPS and streaming SHA256 downloads."""
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 from pathlib import Path
@@ -14,6 +15,7 @@ import ssl
 
 REPO = 'liangliang17655/AIClockIn'
 API = f'https://api.github.com/repos/{REPO}/releases/latest'
+REPOSITORY_API = f'https://api.github.com/repos/{REPO}'
 ROOT = Path('D:/个人开发软件/AI工作区/temp/AIClockIn/updates')
 MAX_PACKAGE = 160 * 1024 * 1024
 HOSTS = {'api.github.com', 'github.com', 'release-assets.githubusercontent.com', 'objects.githubusercontent.com'}
@@ -24,6 +26,14 @@ class UpdateError(RuntimeError):
 
 
 class NoRelease(UpdateError):
+    pass
+
+
+class RateLimited(UpdateError):
+    pass
+
+
+class AccessDenied(UpdateError):
     pass
 
 
@@ -50,8 +60,37 @@ class Redirects(HTTPRedirectHandler):
 def open_url(url):
     safe_url(url)
     opener = build_opener(HTTPSHandler(context=ssl.create_default_context()), Redirects())
-    return opener.open(Request(url, headers={'User-Agent': 'AIClockIn-updater', 'Accept': 'application/vnd.github+json'
-                       if url == API else 'application/octet-stream'}), timeout=15)
+    headers = {'User-Agent': 'AIClockIn-updater', 'Accept': 'application/octet-stream'}
+    if url in (API, REPOSITORY_API):
+        headers.update({'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28'})
+    return opener.open(Request(url, headers=headers), timeout=15)
+
+
+def http_error(exc):
+    """Classify bounded GitHub diagnostics; never expose the response body/IP."""
+    headers = exc.headers or {}
+    try:
+        body = json.loads(exc.read(16384).decode('utf-8'))
+        message = body.get('message', '') if isinstance(body, dict) else ''
+        message = message.lower() if isinstance(message, str) else ''
+    except (OSError, UnicodeError, ValueError):
+        message = ''
+    finally:
+        exc.close()
+    if exc.code == 429 or (exc.code == 403 and (
+            headers.get('X-RateLimit-Remaining') == '0' or headers.get('Retry-After')
+            or 'rate limit' in message)):
+        wait = ''
+        reset = headers.get('X-RateLimit-Reset', '')
+        if reset.isdigit() and 0 < int(reset) < 32503680000:
+            moment = datetime.fromtimestamp(int(reset), timezone(timedelta(hours=8)))
+            wait = f'；服务器建议北京时间 {moment:%m-%d %H:%M:%S} 后再试'
+        elif str(headers.get('Retry-After', '')).isdigit():
+            wait = f'；请至少等待 {headers["Retry-After"]} 秒'
+        return RateLimited(f'GitHub 匿名 API 限流（HTTP {exc.code}），当前网络出口配额不足{wait}。不影响签到或安装。')
+    if exc.code in (401, 403):
+        return AccessDenied(f'GitHub 拒绝访问（HTTP {exc.code}），未确认限流；请检查网络代理或访问权限，无需在软件中填写个人 Token。')
+    return UpdateError(f'GitHub 请求失败（HTTP {exc.code}），请稍后重试')
 
 
 def read_text(url, limit=2*1024*1024):
@@ -64,9 +103,16 @@ def read_text(url, limit=2*1024*1024):
             return value.decode('utf-8-sig')
         except HTTPError as exc:
             if exc.code == 404 and url == API:
-                raise NoRelease('尚未发布正式版本，请稍后再检查') from None
+                exc.close()
+                raise NoRelease('尚未确认可用正式 Release') from None
+            if exc.code == 404 and url == REPOSITORY_API:
+                exc.close()
+                raise UpdateError('GitHub 仓库不存在或无法公开访问（HTTP 404），无法确认 Release 状态。') from None
             if exc.code not in (429, 500, 502, 503, 504) or attempt == 2:
-                raise UpdateError(f'GitHub 请求失败（HTTP {exc.code}），请稍后重试') from None
+                raise http_error(exc) from None
+            if exc.code == 429:
+                raise http_error(exc) from None
+            exc.close()
         except (OSError, URLError, UnicodeError, TimeoutError):
             if attempt == 2:
                 raise UpdateError('连接 GitHub 失败，请检查网络后重新检查') from None
@@ -128,7 +174,14 @@ def parse_release(data, local):
 
 def check(local):
     try:
-        return parse_release(json.loads(read_text(API)), local)
+        try:
+            text = read_text(API)
+        except NoRelease:
+            repository = json.loads(read_text(REPOSITORY_API))
+            if not isinstance(repository, dict) or repository.get('private') is not False:
+                raise UpdateError('无法确认仓库公开可访问，未将缺失 Release 当成最新版本。') from None
+            raise NoRelease('仓库尚未发布可用正式 Release；当前软件可继续使用，请等待发布后再检查。') from None
+        return parse_release(json.loads(text), local)
     except (ValueError, TypeError, KeyError):
         raise UpdateError('GitHub 返回的更新信息无效') from None
 

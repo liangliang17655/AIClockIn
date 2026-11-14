@@ -11,6 +11,12 @@ import uuid
 from .runtime import TEMP, launch
 from .service import Service, scrub
 
+DOUBAO_SESSION = 'doubaowork-current-session'
+
+
+def platform_name(platform):
+    return {'workbuddy': 'WorkBuddy', 'trae': 'Trae CN', 'doubaowork': '豆包工作'}.get(platform, platform)
+
 
 def amount(value):
     return '—' if value is None else f'{value:,.2f}'.rstrip('0').rstrip('.')
@@ -93,6 +99,7 @@ class App:
         self.button(account_header, '全部签到', lambda: self.worker('--silent'), primary=True).pack(side='right')
         self.button(account_header, '添加 Trae CN', lambda: self.worker('--add-trae')).pack(side='right', padx=7)
         self.button(account_header, '添加 WorkBuddy', lambda: self.worker('--add-workbuddy')).pack(side='right')
+        self.button(account_header, '豆包工作（只读）', self.open_doubao).pack(side='right', padx=7)
         self.accounts = self.table(base, 3, ('platform', 'name', 'enabled', 'last'),
                                    ('平台', '账号', '状态', '最近结果'), (130, 330, 110, 250))
         self.accounts.bind('<<TreeviewSelect>>', lambda event: self.refresh_history())
@@ -167,25 +174,33 @@ class App:
                 self.accounts.insert('', 'end', iid=a['id'], values=('WorkBuddy' if a['platform'] == 'workbuddy' else 'Trae CN',
                     scrub(a['name'], [a]), '已启用' if a.get('enabled', True) else '已停用', state),
                     tags=('error',) if state in ('失败', '设备受限') else ())
+            self.account_rows[DOUBAO_SESSION] = {'platform': 'doubaowork'}
+            self.accounts.insert('', 'end', iid=DOUBAO_SESSION, values=(
+                '豆包工作', '当前客户端 · 账号身份待确认', '仅手动只读', '选择后查询额度'))
             if selected and selected[0] in self.account_rows:
                 self.accounts.selection_set(selected[0])
-            self.count.configure(text=f'我的账号   {len(accounts)}')
+            self.count.configure(text=f'账号 / 会话   {len(accounts) + 1}')
             self.refresh_history()
         except Exception as exc:
             self.notice.set(str(exc))
 
     def refresh_history(self):
         selected = self.accounts.selection()
+        doubao_selected = bool(selected and selected[0] == DOUBAO_SESSION)
         self.history_label.configure(text='所选账号记录' if selected else '签到记录 · 最近 200 条')
+        if doubao_selected:
+            self.history_label.configure(text='豆包工作 · 按次查询记录（不代表同一账号）')
         self.history.delete(*self.history.get_children())
         self.record_rows = {}
-        for row in self.store.history(selected[0] if selected else None):
+        for row in self.store.history(selected[0] if selected and not doubao_selected else None):
+            if doubao_selected and row['platform'] != 'doubaowork':
+                continue
             key = str(row['id'])
             self.record_rows[key] = row
             state = row['state']
             self.history.insert('', 'end', iid=key, values=(row['time'].replace('T', ' ')[:19],
-                'WorkBuddy' if row['platform'] == 'workbuddy' else 'Trae CN', row['name'], state, amount(row['earned']), amount(row['balance'])),
-                tags=('error',) if state in ('失败', '设备受限') else ('success',))
+                platform_name(row['platform']), row['name'], state, amount(row['earned']), amount(row['balance'])),
+                tags=('error',) if state in ('失败', '设备受限', '额度查询失败') else ('success',))
 
     def set_detail(self, text):
         self.detail.configure(state='normal')
@@ -196,7 +211,15 @@ class App:
     def show_detail(self, event=None):
         selection = self.history.selection()
         if selection and selection[0] in self.record_rows:
-            self.set_detail(self.record_rows[selection[0]]['detail'])
+            row = self.record_rows[selection[0]]
+            if row['platform'] == 'doubaowork':
+                from .doubao_gui import describe
+                try:
+                    self.set_detail(describe(json.loads(row['detail'])))
+                except (ValueError, TypeError, AttributeError):
+                    self.set_detail('豆包工作查询详情无法读取。')
+            else:
+                self.set_detail(row['detail'])
 
     def clear_selection(self):
         self.accounts.selection_remove(*self.accounts.selection())
@@ -290,12 +313,29 @@ class App:
         if not selected:
             self.notice.set('请先选择一个账号。')
             return None
+        if selected[0] == DOUBAO_SESSION:
+            self.notice.set('豆包工作仅关联当前只读会话，不支持账号重命名、启停或删除。')
+            return None
         return selected[0]
 
     def query(self):
+        if self.accounts.selection() == (DOUBAO_SESSION,):
+            self.open_doubao()
+            return
         selected = self.selection()
         if selected:
             self.worker('--status', '--account', selected)
+
+    def open_doubao(self):
+        if self.running or self.updating:
+            self.notice.set('当前操作正在进行，请稍后打开豆包工作查询。')
+            return
+        dialog = getattr(self, 'doubao_window', None)
+        if dialog and not dialog.closed:
+            dialog.window.lift()
+            return
+        from .doubao_gui import QuotaWindow
+        self.doubao_window = QuotaWindow(self)
 
     def edit(self, **changes):
         if self.updating:
