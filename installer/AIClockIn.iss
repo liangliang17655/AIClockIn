@@ -13,6 +13,9 @@
 #ifndef AppId
   #define AppId "AIClockIn-49F2C4C8-EE14-4FC3-83D1-E2826227F14D"
 #endif
+#ifndef HealthTimeoutMs
+  #define HealthTimeoutMs 90000
+#endif
 #ifndef ShortcutName
   #define ShortcutName "AIClockIn 自动签到"
 #endif
@@ -38,6 +41,7 @@ OutputBaseFilename=AIClockIn-v{#AppVersion}-Setup-windows-x64
 SetupIconFile=..\assets\app.ico
 UninstallDisplayIcon={app}\AIClockIn.exe
 Uninstallable=yes
+SetupLogging=yes
 CloseApplications=no
 RestartApplications=no
 DisableWelcomePage=no
@@ -70,12 +74,45 @@ Name: "{group}\卸载 AIClockIn"; Filename: "{uninstallexe}"
 Filename: "{app}\AIClockIn.exe"; Parameters: "{code:ShortcutArguments}"; Description: "启动 AIClockIn"; Flags: nowait postinstall skipifsilent; Check: CanLaunch
 
 [Code]
+type
+  { Explicit Win64 STARTUPINFOW / PROCESS_INFORMATION layout; SetupArchitecture=x64. }
+  THealthStartup = record
+    cb, Pad: Cardinal;
+    Reserved, Desktop, Title: Int64;
+    X, Y, XSize, YSize, XChars, YChars, Fill, Flags: Cardinal;
+    ShowWindow, ReservedSize: Word;
+    Pad2: Cardinal;
+    Reserved2, StdIn, StdOut, StdErr: Int64;
+  end;
+  THealthProcess = record
+    ProcessHandle, ThreadHandle: Int64;
+    ProcessId, ThreadId: Cardinal;
+  end;
 var
   ExistingDir, ExistingData: String;
   OldExe, OldManifest, OldInfo: String;
   HadExe, HadManifest, HadInfo, StartedFiles, InstallOK, HadRegistration: Boolean;
   InstallFailure, PreviousVersion: String;
+  DiagnosticDir, DiagnosticLog, HealthReport: String;
   GateHandle: Int64;
+
+function HealthCreateProcess(Application, CommandLine: String; ProcessAttributes, ThreadAttributes: Int64;
+  InheritHandles: Boolean; Flags: Cardinal; Environment: Int64; Directory: String;
+  var Startup: THealthStartup; var Process: THealthProcess): Boolean;
+  external 'CreateProcessW@kernel32.dll stdcall';
+function HealthExitCode(Process: Int64; var Code: Cardinal): Boolean;
+  external 'GetExitCodeProcess@kernel32.dll stdcall';
+function HealthTerminate(Process: Int64; Code: Cardinal): Boolean;
+  external 'TerminateProcess@kernel32.dll stdcall';
+procedure HealthZeroStartup(var Startup: THealthStartup; Count: Int64);
+  external 'RtlZeroMemory@kernel32.dll stdcall';
+
+function KernelDeleteFile(Target: String): Boolean;
+  external 'DeleteFileW@kernel32.dll stdcall';
+function KernelCopyFile(Source, Target: String; FailIfExists: Boolean): Boolean;
+  external 'CopyFileW@kernel32.dll stdcall';
+function KernelLastError: Cardinal;
+  external 'GetLastError@kernel32.dll stdcall';
 
 function CreateMutex(Attributes: Integer; InitialOwner: Boolean; Name: String): Int64;
   external 'CreateMutexW@kernel32.dll stdcall';
@@ -222,25 +259,81 @@ begin
   if Result<>'' then ReleaseGate;
 end;
 
+procedure Diagnostic(Message: String);
+var Lines: TArrayOfString;
+begin
+  Log(Message);
+  if DiagnosticLog<>'' then begin
+    SetArrayLength(Lines,1);Lines[0]:=GetDateTimeString('yyyy-mm-dd hh:nn:ss','-',':')+' '+Message;
+    if not SaveStringsToUTF8File(DiagnosticLog,Lines,True) then Log('Cannot persist diagnostic log.');
+  end;
+end;
+
+function RunHealthCheck: Integer;
+var Process: THealthProcess; Startup: THealthStartup;
+    Elapsed, Status, ExitCode, ErrorCode: Cardinal; Health: AnsiString; Executable: String;
+begin
+  Executable:=ExpandConstant('{app}\AIClockIn.exe');
+  HealthZeroStartup(Startup,104);Startup.cb:=104;
+  Diagnostic('Launching offline self-check: '+Executable+'; report='+HealthReport+'; timeout={#HealthTimeoutMs}ms');
+  if not HealthCreateProcess(Executable,'"'+Executable+'" --self-test --report "'+HealthReport+'"',
+      0,0,False,$08000000,0,ExpandConstant('{app}'),Startup,Process) then begin
+    ErrorCode:=KernelLastError;
+    RaiseException('无法启动离线自检，Win32='+IntToStr(ErrorCode)+' '+SysErrorMessage(ErrorCode));
+  end;
+  try
+    Diagnostic('Self-check PID='+IntToStr(Process.ProcessId));
+    Elapsed:=0;
+    repeat
+      Status:=WaitForSingleObject(Process.ProcessHandle,100);
+      if Status=0 then break;
+      if Status<>258 then RaiseException('等待离线自检失败，Win32='+IntToStr(KernelLastError));
+      Elapsed:=Elapsed+100;
+    until Elapsed>={#HealthTimeoutMs};
+    if Status<>0 then begin
+      if not HealthTerminate(Process.ProcessHandle,1460) then Diagnostic('Cannot terminate self-check; Win32='+IntToStr(KernelLastError));
+      if WaitForSingleObject(Process.ProcessHandle,3000)<>0 then
+        RaiseException('离线自检超时，进程仍在退出，PID='+IntToStr(Process.ProcessId)+'；恢复结果请查看日志。');
+      RaiseException('离线自检超时（{#HealthTimeoutMs} ms），已终止本次自检进程。');
+    end;
+    if not HealthExitCode(Process.ProcessHandle,ExitCode) then RaiseException('无法读取自检进程退出码，Win32='+IntToStr(KernelLastError));
+    Result:=Integer(ExitCode);
+    Diagnostic('Self-check exit code='+IntToStr(Result));
+    if LoadStringFromFile(HealthReport,Health) then Diagnostic('Self-check report: '+Utf8Decode(Health))
+    else Diagnostic('Self-check report is missing; inspect dependency/permission/Defender events.');
+    if Result<>0 then RaiseException('离线自检失败，进程退出码='+IntToStr(Result)+'。详情见 '+HealthReport);
+  finally
+    { Close native process/thread handles before rollback replaces its executable. }
+    CloseHandle(Process.ThreadHandle);CloseHandle(Process.ProcessHandle);
+  end;
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
-var Code: Integer; Health: AnsiString;
+var Code: Integer; Health: AnsiString; Reason: String;
 begin
   if CurStep=ssInstall then StartedFiles := True;
   if CurStep=ssPostInstall then begin
     try
-    if not Exec(ExpandConstant('{app}\AIClockIn.exe'),'--self-test --report "'+ExpandConstant('{tmp}\health.json')+'"',ExpandConstant('{app}'),SW_HIDE,ewWaitUntilTerminated,Code) or (Code<>0) then
-      RaiseException('新版本离线检查失败，将尝试恢复原程序。');
-    if not LoadStringFromFile(ExpandConstant('{tmp}\health.json'),Health) or
-       (Pos('"version": "{#AppVersion}"',String(Health))=0) then RaiseException('版本检查失败。');
+      DiagnosticDir:=ExpandConstant('{app}\diagnostics\install-')+GetDateTimeString('yyyymmdd-hhnnss','-',':')+'-'+Copy(GetMD5OfUnicodeString(ExpandConstant('{tmp}')),1,8);
+      if not ForceDirectories(DiagnosticDir) then RaiseException('无法创建 D 盘诊断目录：'+DiagnosticDir);
+      DiagnosticLog:=AddBackslash(DiagnosticDir)+'install.log';
+      HealthReport:=AddBackslash(DiagnosticDir)+'health.json';
+      Diagnostic('AIClockIn expected version={#AppVersion}; setup log='+ExpandConstant('{log}'));
+      Code:=RunHealthCheck;
+      if not LoadStringFromFile(HealthReport,Health) then RaiseException('自检进程已退出但报告不存在。');
+      if (Pos('"ok": true',String(Health))=0) then RaiseException('自检报告未确认成功。');
+      if (Pos('"version": "{#AppVersion}"',String(Health))=0) then RaiseException('自检版本不符，期望 {#AppVersion}。');
 #ifdef ForceHealthFailure
-    RaiseException('Isolated test: health failure');
+      RaiseException('Isolated test: health failure');
 #endif
       if not RegWriteStringValue(HKCU64,'Software\{#AppId}','DataDirectory',DataDirectory('')) then
         RaiseException('无法保存当前用户的数据目录，请检查 Windows 用户权限。');
       InstallOK := True;
+      Diagnostic('Offline validation passed.');
     except
-      InstallFailure:='新版本检查失败。退出安装向导后将恢复原程序；账号和记录保留。';
-      Log(InstallFailure);
+      Reason:=GetExceptionMessage;
+      Diagnostic('INSTALL FAILED: '+Reason);
+      InstallFailure:='新版本检查失败。原因：'+Reason+#13#10+'诊断日志：'+DiagnosticLog+#13#10+'安装日志：'+ExpandConstant('{log}')+#13#10+'退出安装向导后将恢复原程序；账号和记录保留。';
       SuppressibleMsgBox(InstallFailure,mbError,MB_OK,IDOK);
     end;
   end;
@@ -276,12 +369,20 @@ procedure DeinitializeUninstall;
 begin ReleaseGate;end;
 
 procedure DeinitializeSetup;
+var RestoreError: Cardinal;
 begin
   if StartedFiles and not InstallOK then begin
-    if HadExe then if not FileCopy(OldExe,ExpandConstant('{app}\AIClockIn.exe'),False) then
-      SuppressibleMsgBox('恢复原程序失败，请保留原数据并重新运行安装包。',mbError,MB_OK,IDOK);
-    if HadManifest then FileCopy(OldManifest,ExpandConstant('{app}\bundle-manifest.json'),False);
-    if HadInfo then FileCopy(OldInfo,ExpandConstant('{app}\install-info.ini'),False);
+    if HadExe then begin
+      Diagnostic('Rollback source='+OldExe+'; exists='+IntToStr(Ord(FileExists(OldExe)))+'; target='+ExpandConstant('{app}\AIClockIn.exe'));
+      if not KernelCopyFile(OldExe,ExpandConstant('{app}\AIClockIn.exe'),False) then begin
+        RestoreError:=KernelLastError;
+        Diagnostic('ROLLBACK FAILED: Win32='+IntToStr(RestoreError)+' '+SysErrorMessage(RestoreError));
+        SuppressibleMsgBox('恢复原程序失败，请保留原数据并重新运行安装包。诊断日志：'+DiagnosticLog,mbError,MB_OK,IDOK);
+      end else Diagnostic('Previous executable restored.');
+    end else if not KernelDeleteFile(ExpandConstant('{app}\AIClockIn.exe')) then
+      Diagnostic('ROLLBACK FAILED: could not remove failed first-install launcher; Win32='+IntToStr(KernelLastError));
+    if HadManifest and not FileCopy(OldManifest,ExpandConstant('{app}\bundle-manifest.json'),False) then Diagnostic('ROLLBACK FAILED: could not restore previous manifest.');
+    if HadInfo and not FileCopy(OldInfo,ExpandConstant('{app}\install-info.ini'),False) then Diagnostic('ROLLBACK FAILED: could not restore previous data location metadata.');
     if HadRegistration then RegWriteStringValue(HKCU64,'Software\Microsoft\Windows\CurrentVersion\Uninstall\{#AppId}_is1','DisplayVersion',PreviousVersion)
     else RegDeleteKeyIncludingSubkeys(HKCU64,'Software\Microsoft\Windows\CurrentVersion\Uninstall\{#AppId}_is1');
   end;

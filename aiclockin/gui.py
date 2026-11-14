@@ -17,7 +17,8 @@ def amount(value):
 
 
 class App:
-    def __init__(self, root, store, check_updates=True):
+    def __init__(self, root, store, check_updates=True, probe_auto=True):
+        self.probe_auto = probe_auto
         self.root, self.store = root, store
         self.events = queue.Queue()
         self.running = False
@@ -206,6 +207,8 @@ class App:
         self.read_auto()
 
     def read_auto(self):
+        if not self.probe_auto:
+            return  # Offline installation check must not inspect real Windows tasks.
         if not getattr(sys, 'frozen', False):
             self.auto_title.set('自动签到在 EXE 中设置')
             self.auto_detail.set('开发预览不会读取或修改系统任务。')

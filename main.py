@@ -6,33 +6,8 @@ from aiclockin.runtime import prepare, home
 
 
 def selftest(report):
-    import tempfile
-    import tkinter as tk
-    from aiclockin.store import Store, write_json
-    from aiclockin.gui import App
-    with tempfile.TemporaryDirectory(prefix='selftest-') as folder:
-        store = Store(Path(folder))
-        rows = [{'id': 'selftest', 'platform': 'workbuddy', 'name': '离线示例', 'enabled': True,
-                 'credentials': {'uid': 'synthetic-user', 'access_token': 'synthetic-secret'}}]
-        store.save_accounts(rows)
-        assert store.accounts() == rows
-        assert b'synthetic-secret' not in store.account_file.read_bytes()
-        store.record('selftest', 'workbuddy', '离线示例', '失败', None, None, '离线自检，没有请求平台')
-        assert Store(Path(folder)).history()[0]['state'] == '失败'
-        root = tk.Tk()
-        root.withdraw()
-        try:
-            app = App(root, store, check_updates=False)
-            root.update()
-            assert len(app.accounts.get_children()) == 1 and len(app.history.get_children()) == 1
-        finally:
-            root.destroy()
-    from aiclockin.version import current
-    value = {'ok': True, 'dpapi': True, 'history': True, 'gui': True, 'version': current(),
-             'extracted': str(getattr(sys, '_MEIPASS', 'source')), 'home': str(home())}
-    if report:
-        write_json(report, value)
-    return 0
+    from aiclockin.selfcheck import run
+    return run(report)
 
 
 def main():
@@ -48,11 +23,11 @@ def main():
     parser.add_argument('--wait-pid', type=int, default=0)
     parser.add_argument('--wait-parent', type=int, default=0)
     args = parser.parse_args()
+    if args.self_test:
+        return selftest(args.report)
     prepare()
     if args.report and args.report.resolve().drive.upper() != 'D:':
         raise ValueError('报告只能写入 D 盘')
-    if args.self_test:
-        return selftest(args.report)
     from aiclockin.package import data_root, register_running
     if args.uninstall_task:
         from aiclockin.setup_support import remove_own_task

@@ -29,3 +29,7 @@ bundle-manifest.json
 install-info.ini
 unins*.dat
 unins*.msg
+
+# 安装版临时运行目录
+.runtime/
+diagnostics/

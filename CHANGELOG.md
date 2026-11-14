@@ -89,3 +89,21 @@ Setup SHA256：63616502fc03b367b0bd98583be326a529c37602c3aa558d9391c90945e10016�
 用户要求 GitHub 页面下载入口也为最新版。根安装包已在9872aaa上传，但 main 原始文件地址曾返回旧0.4.0缓存。将 README 下载链接改为完整提交9872aaaabfe020991867c40ff80d90785cf2e589对应的0.4.1 Setup，注明当前版本；RELEASING要求后续每次上传安装包后更新README已验证提交地址。只修改 README、RELEASING、TASKS、CHANGELOG、HANDOFF，不改程序或用户数据。
 
 验证：该固定地址先前实际 HTTP200，13,848,240字节，SHA256 63616502fc03b367b0bd98583be326a529c37602c3aa558d9391c90945e10016，与本地修正版一致；本次检查文案与 git diff --check，并在推送后核对远程README。文档修改不重复构建/运行程序测试。未创建正式Release；未来新版仍须按发布步骤同步README，不声称固定提交URL会自动变化。
+
+
+## TASK-012 · 2026-11-12 · 源码目录丢失恢复
+
+用户反馈源码被删除。检查时项目目录仅余 .git/objects，git status/log均报非仓库，确认本机源码确实缺失；不根据缺失现象推断删除者或原因。现有安装脚本无 UninstallDelete/DelTree/源码目录递归清除规则，未找到能证明此次删除来源的证据，等待用户说明此前安装/卸载操作。
+
+恢复：从公开远程克隆到 D:/个人开发软件/AI工作区/temp/AIClockIn-source-recovery-20261112，核对残留文件冲突后，仅复制缺失文件回原目录，未覆盖残留文件，未 reset/clean/递归删除。恢复101个缺失文件（含Git元数据）；远程最新提交8e8f30b。当前D:/AIClockIn数据不改写；未提交源码和原本地data不属于Git可恢复内容，未声称已恢复。
+
+验证：恢复后 git status --short无输出，git log -1=8e8f30b；git fsck --connectivity-only通过，git ls-files --deleted无输出；main.py/README/AGENTS/aiclockin/gui.py存在。未改业务代码，不重复构建或运行全量测试。此次仅增量更新TASKS/HANDOFF/CHANGELOG以记录恢复事实，未提交/推送。风险：删除根因未确定、原未跟踪文件可恢复性未知；下一步核对用户最近的安装/卸载目录，避免源码与运行安装目录混用。
+
+
+## TASK-013 · 2026-11-14 · 安装自检跨电脑失败诊断修复
+
+根因证据、影响范围、完整修改清单与测试边界见docs/INSTALL-DIAGNOSTICS.md。已确认旧安装器{tmp}报告在C时被main的D盘约束拒绝，且异常被通用提示掩盖；首次失败留下启动文件也已复现并修正。版本0.4.2保留自检/版本/失败恢复，增加D盘阶段诊断、90秒原生进程等待与句柄关闭，安装版.runtime不再依赖开发机目录；selfcheck禁用网络和任务探测。签到核心和生产账号/任务不改。
+
+实际文件：.gitignore、VERSION、main.py、aiclockin/selfcheck.py、runtime.py、gui.py、installer/AIClockIn.iss、tests/test_selfcheck.py、verify_install_diagnostics_windows.py、docs/INSTALL-DIAGNOSTICS.md、TASKS/HANDOFF/CHANGELOG、根Setup及后续README下载说明。保留原TASK-012未提交恢复记录。
+
+验证：78项unittest通过；build与release exit0；真实原生超时/版本不符恢复旧4.1哈希、合成账号/SQLite/历史、任务XML保持；故意缺_tkinter依赖输出类型/阶段/堆栈且首次失败EXE清理；首装桌面/开始菜单、正常GUI/.runtime及卸载自有链接通过。独立审查发现终止状态检查问题已修复，原生进程实现复核通过。其他实体电脑、Defender隔离、真实C-TEMP启动原生Setup均未实测。未关闭防护，未发布正式Release。下一步由对方复测并提供诊断文件，远程分发结果以最终提交记录为准。
