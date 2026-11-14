@@ -2,11 +2,11 @@
 
 ## 下载软件
 
-**[点击下载 AIClockIn 自动签到 Windows版本安装包](https://raw.githubusercontent.com/liangliang17655/AIClockIn/9872aaaabfe020991867c40ff80d90785cf2e589/AIClockInSetup.exe)**
+**[点击下载 AIClockIn 自动签到 Windows版本安装包](https://raw.githubusercontent.com/liangliang17655/AIClockIn/2f263c2e429b75157725a0cccac7ca1309a52fff/AIClockInSetup.exe)**
 
-当前下载版本：**v0.4.1**。点击上方链接直接下载带安装向导的 `AIClockInSetup.exe`，无需拉取代码或安装 Python。
+当前下载版本：**v0.4.2**。点击上方链接直接下载带安装向导的 `AIClockInSetup.exe`，无需拉取代码或安装 Python。
 
-适用于 Windows 64 位系统，提供 WorkBuddy 多账号管理与依次签到，以及 Trae CN 签到功能。
+适用于 Windows 10 及更新版本的 x64 系统，提供 WorkBuddy 多账号管理与依次签到，以及 Trae CN 签到功能。
 
 **Trae CN 的同设备多账号领取限制尚未解决。** 软件可以保存多个 Trae CN 账号，但不代表这些账号都能在同一台电脑上领取奖励。遇到 `9095` 会记录为“设备受限”，不能宣称支持同设备多账号全部签到成功。
 
@@ -20,9 +20,15 @@ v0.4.1 起，安装成功后会为当前 Windows 用户记住数据目录。卸�
 
 一个独立、简单的 Windows 本地签到工具，提供账号管理、签到执行、结果记录和后台定时。Trae CN 的实际领取受设备限制，具体以平台返回结果为准。
 
-**v0.4.1 · 2026-11-12**。Python 标准库 + Tkinter，独立应用代码；必要的 WorkBuddy 本机登录适配按 MIT 署名复用，见 [来源与许可](THIRD-PARTY-NOTICES.md)。不是将旧签到脚本整体换一层界面。
+**v0.4.2 · 2026-11-14**。Python 标准库 + Tkinter，独立应用代码；必要的 WorkBuddy 本机登录适配按 MIT 署名复用，见 [来源与许可](THIRD-PARTY-NOTICES.md)。不是将旧签到脚本整体换一层界面。
 
 软件启动后会在后台检查最新正式 Release；网络异常不影响原有功能。手动检查、自动检查开关和版本信息位于右上角“设置”。更新包通过 SHA256 校验后才允许安装；详情及维护者打包发布步骤见 [发布与更新说明](docs/RELEASING.md)。
+
+## 安装失败怎么办
+
+v0.4.2 修复了“安装目录在 D 盘，但 Windows TEMP 在 C 盘时自检失败”的路径冲突，并保留具体阶段、异常和退出码。其他电脑的实测仍待完成，不能保证所有安装失败都只有这一原因。
+
+如曾出现“显示失败但已有程序文件、没有桌面入口”，关闭程序后用新版 Setup 沿原目录安装，无需先卸载或删除 data；安装时勾选“创建桌面快捷方式”。若仍失败，请按弹窗查看 `安装目录\diagnostics\install-会话\install.log` 和 `health.json`（如已生成），提供这两份诊断即可，不要发送账号文件。完整原因、测试结果及本地复测命令见 [安装诊断说明](docs/INSTALL-DIAGNOSTICS.md)。
 
 ## 使用
 
@@ -52,7 +58,7 @@ v0.4.1 起，安装成功后会为当前 Windows 用户记住数据目录。卸�
 ```text
 AIClockIn/
 ├── AIClockIn.exe
-├── _runtime-v0.4.1-…/     # 必须保留的运行依赖
+├── _runtime-v0.4.2-…/     # 必须保留的运行依赖
 ├── install-info.ini       # 安装时记录数据路径
 ├── main.py
 ├── aiclockin/              # 独立应用源码
@@ -67,7 +73,7 @@ AIClockIn/
 
 账号和历史只存在本项目的数据目录。更新由 Inno Setup 替换程序及完整运行依赖，保留 `data` 和原路径，计划任务继续使用同一 EXE。文件夹版不能单独移动 EXE。卸载会移除程序和快捷方式，保留账号、历史和自动设置；只清理属于当前安装的自动任务。密文一般只能由原 Windows 用户/机器解密，不要复制后期待其他用户可用，也不要把明文凭据提交到 GitHub。
 
-应用改为 PyInstaller 文件夹版，启动无需单文件临时解压。程序、数据、应用更新暂存放 D 盘。Inno 原生启动器使用 Windows TEMP（本机已在 D 盘，其他电脑取决于系统设置）；桌面、开始菜单及卸载登记遵循当前 Windows 用户路径。
+应用改为 PyInstaller 文件夹版，启动无需单文件临时解压。程序、数据、应用更新暂存放 D 盘；安装版正常临时目录为程序旁 `.runtime`，安装自检报告和临时工作目录为 `diagnostics` 的独立会话。Inno 原生启动器使用 Windows TEMP（本机已在 D 盘，其他电脑取决于系统设置）；桌面、开始菜单及卸载登记遵循当前 Windows 用户路径。
 
 ## 开发与验证
 

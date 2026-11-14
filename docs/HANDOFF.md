@@ -171,3 +171,6 @@ Setup SHA256：63616502fc03b367b0bd98583be326a529c37602c3aa558d9391c90945e10016�
 实际文件：.gitignore、VERSION、main.py、aiclockin/selfcheck.py、runtime.py、gui.py、installer/AIClockIn.iss、tests/test_selfcheck.py、verify_install_diagnostics_windows.py、docs/INSTALL-DIAGNOSTICS.md、TASKS/HANDOFF/CHANGELOG、根Setup及后续README下载说明。保留原TASK-012未提交恢复记录。
 
 验证：78项unittest通过；build与release exit0；真实原生超时/版本不符恢复旧4.1哈希、合成账号/SQLite/历史、任务XML保持；故意缺_tkinter依赖输出类型/阶段/堆栈且首次失败EXE清理；首装桌面/开始菜单、正常GUI/.runtime及卸载自有链接通过。独立审查发现终止状态检查问题已修复，原生进程实现复核通过。其他实体电脑、Defender隔离、真实C-TEMP启动原生Setup均未实测。未关闭防护，未发布正式Release。下一步由对方复测并提供诊断文件，远程分发结果以最终提交记录为准。
+
+
+TASK-013 远程分发：修复与安装包提交 `2f263c2` 已推送 origin/main；固定提交下载 HTTP200，13,855,332字节，SHA256 65da9bdae4c7dca82b186e37942f4567147567ec3bd2c46f3985c237da7b4ae0，与最终本地Setup一致。README版本和下载链接同步v0.4.2，避免main缓存旧包。未创建正式Release，等待对方电脑复测；本机生产安装没有被自动替换。
