@@ -1,8 +1,8 @@
 # AIClockIn
 
-### 豆包工作只读额度（v0.5.0 本地安装版）
+### 豆包工作只读额度（v0.5.0）
 
-本地安装包：`dist/release/v0.5.0/AIClockIn-v0.5.0-Setup-windows-x64.exe`。本轮尚未上传 GitHub，下面的公开下载链接仍为 v0.4.2，不包含豆包工作功能。升级请关闭 AIClockIn 后直接运行新版 Setup，沿用原目录，无需先卸载或删除 data。
+v0.5.0 已正式发布，包含豆包工作只读功能。本地安装包：`dist/release/v0.5.0/AIClockIn-v0.5.0-Setup-windows-x64.exe`。升级可在“设置 → 检查更新”中进行，或关闭 AIClockIn 后直接运行新版 Setup，沿用原目录，无需先卸载或删除 data。
 
 发布前稳定性、更新限流修复和真实验收见 [v0.5.0 发布准备](docs/RELEASE-0.5.0-READINESS.md)；其他电脑可按 [首次/覆盖安装清单](docs/INSTALL-ACCEPTANCE-0.5.0.md) 验收。
 
@@ -21,9 +21,9 @@
 
 ## 下载软件
 
-**[点击下载 AIClockIn 自动签到 Windows版本安装包](https://raw.githubusercontent.com/liangliang17655/AIClockIn/2f263c2e429b75157725a0cccac7ca1309a52fff/AIClockInSetup.exe)**
+**[下载 AIClockIn Windows 安装包](https://github.com/liangliang17655/AIClockIn/releases/latest/download/AIClockInSetup.exe)**
 
-当前下载版本：**v0.4.2**。点击上方链接直接下载带安装向导的 `AIClockInSetup.exe`，无需拉取代码或安装 Python。
+当前下载版本：**v0.5.0**。点击上方链接直接下载带安装向导的 `AIClockInSetup.exe`，无需拉取代码或安装 Python。[更新说明与 SHA256](https://github.com/liangliang17655/AIClockIn/releases/tag/v0.5.0)。
 
 适用于 Windows 10 及更新版本的 x64 系统，提供 WorkBuddy 多账号管理与依次签到，以及 Trae CN 签到功能。
 
@@ -39,7 +39,7 @@ v0.4.1 起，安装成功后会为当前 Windows 用户记住数据目录。卸�
 
 一个独立、简单的 Windows 本地签到工具，提供账号管理、签到执行、结果记录和后台定时。Trae CN 的实际领取受设备限制，具体以平台返回结果为准。
 
-**v0.4.2 · 2026-11-14**。Python 标准库 + Tkinter，独立应用代码；必要的 WorkBuddy 本机登录适配按 MIT 署名复用，见 [来源与许可](THIRD-PARTY-NOTICES.md)。不是将旧签到脚本整体换一层界面。
+**v0.5.0 · 2026-11-14**。Python 标准库 + Tkinter，独立应用代码；必要的 WorkBuddy 本机登录适配按 MIT 署名复用，见 [来源与许可](THIRD-PARTY-NOTICES.md)。不是将旧签到脚本整体换一层界面。
 
 软件启动后会在后台检查最新正式 Release；网络异常不影响原有功能。手动检查、自动检查开关和版本信息位于右上角“设置”。更新包通过 SHA256 校验后才允许安装；详情及维护者打包发布步骤见 [发布与更新说明](docs/RELEASING.md)。
 
