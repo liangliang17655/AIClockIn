@@ -58,3 +58,8 @@
 其他电脑首次/覆盖/卸载/失败诊断清单见INSTALL-ACCEPTANCE-0.5.0.md。仍未验证：Windows10实体机、其他实体电脑、Defender/受控目录策略、正式Release的公网下载与更新全链路、最终冻结GUI里的豆包刷新。此前异机自检路径修复保留且新候选本机回归通过；不能据此宣称异机兼容全部解决。
 
 证据：D工作区outputs/AIClockIn-validation/release-0.5.0/（HTTP根因/恢复、构建、安全审计），install-diagnostics/v0.5.0/（最终安装/快捷方式），doubaowork/task017-helper-0.5.0.json、task017-scheduled-0.5.0.json（最终包重新验证，文件名沿用但以本次时间和内容为准）。下一步优先执行其他电脑清单，批准正式发布后再验证线上链路。
+
+
+## TASK-019 (2026-11-14): authorized local merge into main
+
+User requested merge and continuation. Initial worktree clean; no interrupted merge. Reviewed main...develop/v0.5.0-release-validation: diff check passed, original provider/auth/service/store/schedule/installer files unchanged. Local main fast-forwarded 906a920 -> 195ab57 without conflict using git merge --ff-only develop/v0.5.0-release-validation. Post-merge python -B -m unittest discover -s tests: 95 passed (11.627s). Development branch retained. No new application changes, rebuild or repeated installer tests needed because merged tree equals the tested candidate. Incremental records: docs/TASKS.md, docs/HANDOFF.md, CHANGELOG.md and docs/RELEASE-0.5.0-READINESS.md. No remote fetch/push, tag or Release publication; other-PC/online-release verification limits remain. Next: explicitly authorized remote synchronization or remaining release acceptance checks.
