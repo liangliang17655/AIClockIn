@@ -1,8 +1,8 @@
 # v0.4.0 起的打包与发布
 
-## v0.5.1 本地交付
+## v0.5.1 正式发布
 
-v0.5.1已生成本地安装包并通过本机验收，尚未上传GitHub。发布时使用dist/release/v0.5.1中的版本安装包、AIClockInSetup.exe、SHA256SUMS.txt、RELEASE-NOTES.md、INSTALLATION.md；仅在获准发布后执行，不上传selftest.json、work或diagnostics。实际验证和跨机限制见[本轮验收](STABLE-0.5.1-RESULT.md)。下载入口在正式附件发布前仍保留已发布的v0.5.0，不冒充新包。
+TASK-031：2026-11-15 用户已授权并正式发布 v0.5.1，标签指向源码提交 e3233a4。五个附件已上传并逐一核对 GitHub SHA256，固定下载入口已更新。复用 TASK-030 最终验收包，具体本机测试和跨机限制见 [验收记录](STABLE-0.5.1-RESULT.md)。
 
 ## v0.5.0 发布流程
 

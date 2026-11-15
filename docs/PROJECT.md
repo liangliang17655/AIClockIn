@@ -120,3 +120,8 @@ User rejects indefinite probes and read-only substitution. Current implementatio
 
 ### TASK-030 stable release decisions
 Formal platforms remain WorkBuddy/Trae CN; DOUBAO_ENABLED=false and archived modules excluded from frozen bundle, previous data/history retained. Official GitHub stable redirect+Atom+SHA fallback handles anonymous API quota without Token/SSL weakening. Download cache uses app runtime; update transaction root retains old-helper protocol (native failure repro and corrected regression). Offline installer health gate remains required. Local v0.5.1 delivery only; cross-PC and public-new-version whole update chain pending. See STABLE-0.5.1-RESULT.md.
+
+
+## TASK-031 · v0.5.1 正式发布
+
+2026-11-15 用户明确授权上传最新代码与安装包。源码 e3233a4 已推送，v0.5.1正式Release已设为latest，五个附件校验一致，公开下载和应用更新检查通过。正式范围仍为WorkBuddy/Trae CN。详情见TASKS与HANDOFF的TASK-031。

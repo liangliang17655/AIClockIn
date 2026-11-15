@@ -197,3 +197,8 @@ Stop future Doubao sampling at user request and cancel the verified 20261116 one
 
 ## TASK-030 / v0.5.1 (2026-11-15)
 Hide archived Doubao entry and exclude research modules from release, retain historical records. API quota fallback uses official latest/Atom/assets and mandatory SHA256; download cache separated from legacy-compatible transaction root. Preserve offline install validation/rollback and clarify error wording. Final145 tests and native isolated acceptance pass; local Setup and notes prepared, no publication. Details: docs/STABLE-0.5.1-RESULT.md.
+
+
+## TASK-031 · 2026-11-15 发布 v0.5.1
+
+用户授权上传最新代码并更新 GitHub 安装包。源码提交 e3233a4 已推送 main，复用 TASK-030 最终包。实际验证命令 `D:/Python/python.exe -B -m unittest discover -s tests -p test_*.py`，145项通过；`git diff --check`通过；两个Setup均为13874856字节，SHA256为03378a93bf31c7819cfaf8a6c073ce4b67a5e904c9d13b8b222680aec1661351。凭据特征扫描无匹配。实际文件为现有源码/测试/工具和项目记录，本任务增量更新README、RELEASING、TASKS、CHANGELOG、HANDOFF。已完成：v0.5.1 正式 Release 设为 latest，五个附件服务端 SHA256 匹配；公开 latest 下载得到13874856字节，SHA256与本地一致；生产 update.check(0.5.0) 识别v0.5.1，check(0.5.1)返回最新。证据在D盘AI工作区 outputs/AIClockIn-validation/release-0.5.1/published-release.json及public-verification.json。沿用相同包的本机安装/更新/回滚验收，未重复构建和安装；其他电脑和Windows10实机未验证。下一步由用户在目标电脑安装验收；公网下载和检查已验证，公网包的真实安装升级未在本轮重复执行。

@@ -2,7 +2,7 @@
 
 Windows 桌面签到工具，支持 WorkBuddy、Trae CN 账号管理、顺序签到、Windows 后台自动任务、本地记录和 GitHub 更新。
 
-本轮本地安装包为 **v0.5.1**：`dist/release/v0.5.1/AIClockIn-v0.5.1-Setup-windows-x64.exe`，尚未上传 GitHub；下方在线链接仍是已发布版本。验收与实际限制见 [v0.5.1 验收](docs/STABLE-0.5.1-RESULT.md)。
+当前正式版本为 **v0.5.1**，已发布 GitHub Release，可通过下方链接下载安装。验收与实际限制见 [v0.5.1 验收](docs/STABLE-0.5.1-RESULT.md)。
 
 豆包工作入口已隐藏，源码和已有记录保留，不参与正式自动签到任务。
 
@@ -10,7 +10,7 @@ Windows 桌面签到工具，支持 WorkBuddy、Trae CN 账号管理、顺序签
 
 **[下载 AIClockIn Windows 安装包](https://github.com/liangliang17655/AIClockIn/releases/latest/download/AIClockInSetup.exe)**
 
-当前下载版本：**v0.5.0**。点击上方链接直接下载带安装向导的 `AIClockInSetup.exe`，无需拉取代码或安装 Python。[更新说明与 SHA256](https://github.com/liangliang17655/AIClockIn/releases/tag/v0.5.0)。
+当前下载版本：**v0.5.1**。点击上方链接直接下载带安装向导的 `AIClockInSetup.exe`，无需拉取代码或安装 Python。[更新说明与 SHA256](https://github.com/liangliang17655/AIClockIn/releases/tag/v0.5.1)。
 
 适用于 Windows 10 及更新版本的 x64 系统，提供 WorkBuddy 多账号管理与依次签到，以及 Trae CN 签到功能。
 
@@ -26,7 +26,7 @@ v0.4.1 起，安装成功后会为当前 Windows 用户记住数据目录。卸�
 
 一个独立、简单的 Windows 本地签到工具，提供账号管理、签到执行、结果记录和后台定时。Trae CN 的实际领取受设备限制，具体以平台返回结果为准。
 
-**v0.5.0 · 2026-11-14**。Python 标准库 + Tkinter，独立应用代码；必要的 WorkBuddy 本机登录适配按 MIT 署名复用，见 [来源与许可](THIRD-PARTY-NOTICES.md)。不是将旧签到脚本整体换一层界面。
+**v0.5.1 · 2026-11-15**。Python 标准库 + Tkinter，独立应用代码；必要的 WorkBuddy 本机登录适配按 MIT 署名复用，见 [来源与许可](THIRD-PARTY-NOTICES.md)。不是将旧签到脚本整体换一层界面。
 
 软件启动后会在后台检查最新正式 Release；网络异常不影响原有功能。手动检查、自动检查开关和版本信息位于右上角“设置”。更新包通过 SHA256 校验后才允许安装；详情及维护者打包发布步骤见 [发布与更新说明](docs/RELEASING.md)。
 
