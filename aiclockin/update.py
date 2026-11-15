@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 import hashlib
+from html.parser import HTMLParser
 import json
 from pathlib import Path
 import re
@@ -12,11 +13,15 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import Request, HTTPSHandler, HTTPRedirectHandler, build_opener
 import ssl
+import xml.etree.ElementTree as ET
+from .runtime import TEMP
 
 REPO = 'liangliang17655/AIClockIn'
 API = f'https://api.github.com/repos/{REPO}/releases/latest'
 REPOSITORY_API = f'https://api.github.com/repos/{REPO}'
+# Existing installed helpers validate this transaction root; changing it breaks old updates.
 ROOT = Path('D:/个人开发软件/AI工作区/temp/AIClockIn/updates')
+DOWNLOAD_ROOT = TEMP / 'updates'
 MAX_PACKAGE = 160 * 1024 * 1024
 HOSTS = {'api.github.com', 'github.com', 'release-assets.githubusercontent.com', 'objects.githubusercontent.com'}
 
@@ -172,6 +177,48 @@ def parse_release(data, local):
                    'setup' if setup else 'portable')
 
 
+class ReleaseNotes(HTMLParser):
+    def __init__(self):
+        super().__init__(); self.parts = []
+    def handle_starttag(self, tag, attrs):
+        if tag in ('p','div','br','li'): self.parts.append('\n- ' if tag == 'li' else '\n')
+    def handle_endtag(self, tag):
+        if tag in ('p','div','li'): self.parts.append('\n')
+    def handle_data(self, data): self.parts.append(data)
+
+
+def check_official_release(local):
+    """API quota fallback: same public repository, official stable redirect and assets."""
+    base = f'https://github.com/{REPO}/releases'
+    with open_url(base + '/latest') as response:
+        target = response.geturl()
+    safe_url(target)
+    prefix = base + '/tag/'
+    if not target.startswith(prefix) or urlsplit(target).query:
+        raise UpdateError('正式 Release 重定向不属于指定仓库')
+    tag = target[len(prefix):]
+    remote = version(tag)  # Reject prerelease/non-version paths, never guess a tag.
+    if remote <= version(local):
+        return None
+    feed = ET.fromstring(read_text(base + '.atom'))
+    ns = '{http://www.w3.org/2005/Atom}'
+    entries = [e for e in feed.findall(ns+'entry') if any(
+        link.get('rel') == 'alternate' and link.get('href') == target for link in e.findall(ns+'link'))]
+    if len(entries) != 1:
+        raise UpdateError('官方更新源没有匹配的正式版本说明')
+    parser = ReleaseNotes(); parser.feed(entries[0].findtext(ns+'content') or '')
+    name = f'AIClockIn-v{".".join(map(str,remote))}-Setup-windows-x64.exe'
+    assets = base + '/download/' + tag + '/'
+    sums = assets + 'SHA256SUMS.txt'
+    digest = checksum(read_text(sums,64*1024), name)
+    with open_url(assets + name) as response:
+        size = response.headers.get('Content-Length','')
+    if not str(size).isdigit() or not 0 < int(size) <= MAX_PACKAGE:
+        raise UpdateError('官方安装包大小无法确认')
+    return Release(tag, ''.join(parser.parts).strip()[:50000] or '发布者没有填写更新说明。',
+                   name, assets+name, int(size), sums, digest, 'setup')
+
+
 def check(local):
     try:
         try:
@@ -182,6 +229,11 @@ def check(local):
                 raise UpdateError('无法确认仓库公开可访问，未将缺失 Release 当成最新版本。') from None
             raise NoRelease('仓库尚未发布可用正式 Release；当前软件可继续使用，请等待发布后再检查。') from None
         return parse_release(json.loads(text), local)
+    except RateLimited as limited:
+        try:
+            return check_official_release(local)
+        except (UpdateError, HTTPError, URLError, OSError, UnicodeError, ValueError, ET.ParseError):
+            raise RateLimited(str(limited) + ' 官方 Release 后备检查未完成，请稍后重试。') from None
     except (ValueError, TypeError, KeyError):
         raise UpdateError('GitHub 返回的更新信息无效') from None
 

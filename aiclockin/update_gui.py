@@ -8,7 +8,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import uuid
 
-from .update import ROOT, check, download, expected_hash, UpdateError, NoRelease, RateLimited
+from .update import DOWNLOAD_ROOT as ROOT, check, download, expected_hash, UpdateError, NoRelease, RateLimited
 from .update_apply import create_transaction, launch_helper
 from .store import write_json
 from .version import current

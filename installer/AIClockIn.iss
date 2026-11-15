@@ -333,7 +333,7 @@ begin
     except
       Reason:=GetExceptionMessage;
       Diagnostic('INSTALL FAILED: '+Reason);
-      InstallFailure:='新版本检查失败。原因：'+Reason+#13#10+'诊断日志：'+DiagnosticLog+#13#10+'安装日志：'+ExpandConstant('{log}')+#13#10+'退出安装向导后将恢复原程序；账号和记录保留。';
+      InstallFailure:='安装后的离线启动验证失败。原因：'+Reason+#13#10+'诊断日志：'+DiagnosticLog+#13#10+'安装日志：'+ExpandConstant('{log}')+#13#10+'退出安装向导后将恢复原程序；账号和记录保留。';
       SuppressibleMsgBox(InstallFailure,mbError,MB_OK,IDOK);
     end;
   end;

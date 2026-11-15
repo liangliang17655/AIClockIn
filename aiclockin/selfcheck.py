@@ -31,7 +31,7 @@ def perform(stage):
         try:
             app = App(root, store, check_updates=False, probe_auto=False)
             root.update()
-            assert set(app.accounts.get_children()) == {'selftest', 'doubaowork-current-session'}
+            assert set(app.accounts.get_children()) == {'selftest'}
             assert len(app.history.get_children()) == 1
         finally:
             root.destroy()

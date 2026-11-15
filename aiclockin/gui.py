@@ -12,6 +12,7 @@ from .runtime import TEMP, launch
 from .service import Service, scrub
 
 DOUBAO_SESSION = 'doubaowork-current-session'
+from .features import DOUBAO_ENABLED
 
 
 def platform_name(platform):
@@ -99,7 +100,8 @@ class App:
         self.button(account_header, '全部签到', lambda: self.worker('--silent'), primary=True).pack(side='right')
         self.button(account_header, '添加 Trae CN', lambda: self.worker('--add-trae')).pack(side='right', padx=7)
         self.button(account_header, '添加 WorkBuddy', lambda: self.worker('--add-workbuddy')).pack(side='right')
-        self.button(account_header, '豆包工作（只读）', self.open_doubao).pack(side='right', padx=7)
+        if DOUBAO_ENABLED:
+            self.button(account_header, '豆包工作（只读）', self.open_doubao).pack(side='right', padx=7)
         self.accounts = self.table(base, 3, ('platform', 'name', 'enabled', 'last'),
                                    ('平台', '账号', '状态', '最近结果'), (130, 330, 110, 250))
         self.accounts.bind('<<TreeviewSelect>>', lambda event: self.refresh_history())
@@ -174,12 +176,13 @@ class App:
                 self.accounts.insert('', 'end', iid=a['id'], values=('WorkBuddy' if a['platform'] == 'workbuddy' else 'Trae CN',
                     scrub(a['name'], [a]), '已启用' if a.get('enabled', True) else '已停用', state),
                     tags=('error',) if state in ('失败', '设备受限') else ())
-            self.account_rows[DOUBAO_SESSION] = {'platform': 'doubaowork'}
-            self.accounts.insert('', 'end', iid=DOUBAO_SESSION, values=(
-                '豆包工作', '当前客户端 · 账号身份待确认', '仅手动只读', '选择后查询额度'))
+            if DOUBAO_ENABLED:
+                self.account_rows[DOUBAO_SESSION] = {'platform': 'doubaowork'}
+                self.accounts.insert('', 'end', iid=DOUBAO_SESSION, values=(
+                    '豆包工作', '当前客户端 · 账号身份待确认', '仅手动只读', '选择后查询额度'))
             if selected and selected[0] in self.account_rows:
                 self.accounts.selection_set(selected[0])
-            self.count.configure(text=f'账号 / 会话   {len(accounts) + 1}')
+            self.count.configure(text=f'账号   {len(self.account_rows)}')
             self.refresh_history()
         except Exception as exc:
             self.notice.set(str(exc))
@@ -213,9 +216,8 @@ class App:
         if selection and selection[0] in self.record_rows:
             row = self.record_rows[selection[0]]
             if row['platform'] == 'doubaowork':
-                from .doubao_gui import describe
                 try:
-                    self.set_detail(describe(json.loads(row['detail'])))
+                    self.set_detail(json.dumps(json.loads(row['detail']), ensure_ascii=False, indent=2))
                 except (ValueError, TypeError, AttributeError):
                     self.set_detail('豆包工作查询详情无法读取。')
             else:
@@ -327,6 +329,9 @@ class App:
             self.worker('--status', '--account', selected)
 
     def open_doubao(self):
+        if not DOUBAO_ENABLED:
+            self.notice.set('本正式版本已隐藏豆包工作入口；原有历史记录保留。')
+            return
         if self.running or self.updating:
             self.notice.set('当前操作正在进行，请稍后打开豆包工作查询。')
             return

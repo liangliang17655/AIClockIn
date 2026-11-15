@@ -43,6 +43,8 @@ try {
     & $BuildPython -B -m PyInstaller --noconfirm --onedir --contents-directory $runtimeName --windowed --noupx --name AIClockIn `
         --icon "$PSScriptRoot\assets\app.ico" --add-data "$PSScriptRoot\assets\app.ico;assets" `
         --add-data "$VersionFile;." --add-data "$PSScriptRoot\LICENSE;." --add-data "$PSScriptRoot\THIRD-PARTY-NOTICES.md;." `
+        --exclude-module aiclockin.doubao_gui --exclude-module aiclockin.doubaowork `
+        --exclude-module aiclockin.doubao_session --exclude-module aiclockin.doubao_binding --exclude-module aiclockin.doubao_receipt `
         --distpath (Join-Path $build 'folder-dist') --workpath (Join-Path $build 'folder-work') --specpath $build main.py
     if ($LASTEXITCODE -ne 0) { throw 'EXE build failed' }
     $bundle = Join-Path $Destination 'AIClockIn'

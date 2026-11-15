@@ -13,7 +13,7 @@ def selftest(report):
 def main():
     parser = argparse.ArgumentParser(description='AIClockIn 本地核心签到')
     modes = parser.add_mutually_exclusive_group()
-    for option in ('silent', 'status', 'add-workbuddy', 'add-trae', 'auto-on', 'auto-off', 'self-test', 'install', 'uninstall-task'):
+    for option in ('silent', 'status', 'add-workbuddy', 'add-trae', 'auto-on', 'auto-off', 'self-test', 'install', 'uninstall-task', 'doubao-prepare'):
         modes.add_argument('--' + option, action='store_true')
     parser.add_argument('--data', type=Path)
     parser.add_argument('--account')
@@ -48,12 +48,12 @@ def main():
                 register_running(Path(sys.executable))
         if setup_interrupted:
             if setup_update.active(setup_interrupted):return 2
-            if any((args.silent,args.status,args.add_workbuddy,args.add_trae,args.auto_on,args.auto_off)):return 2
+            if any((args.silent,args.status,args.add_workbuddy,args.add_trae,args.auto_on,args.auto_off,args.doubao_prepare)):return 2
             import os
             setup_update.launch_helper(setup_interrupted,os.getpid())
             return 0
         if interrupted:
-            if any((args.silent, args.status, args.add_workbuddy, args.add_trae, args.auto_on, args.auto_off)):
+            if any((args.silent, args.status, args.add_workbuddy, args.add_trae, args.auto_on, args.auto_off, args.doubao_prepare)):
                 return 2  # Do not use real accounts while an interrupted update needs recovery.
             import os
             launch_helper(interrupted, os.getpid())
@@ -63,10 +63,19 @@ def main():
     from aiclockin.store import Store, Busy, write_json
     from aiclockin.service import Service
     store = Store(args.data or data_root(home()))
-    worker = any((args.silent, args.status, args.add_workbuddy, args.add_trae, args.auto_on, args.auto_off))
+    worker = any((args.silent, args.status, args.add_workbuddy, args.add_trae, args.auto_on, args.auto_off, args.doubao_prepare))
     try:
         service = Service(store)
-        if args.silent or args.status:
+        if args.doubao_prepare:
+            from aiclockin.features import DOUBAO_ENABLED
+            if not DOUBAO_ENABLED:
+                if args.report:
+                    write_json(args.report, {'ok': False, 'message': '本正式版本未启用豆包工作。'})
+                return 1
+            from aiclockin.doubao_session import check_bound_session
+            result = check_bound_session(store)
+            ok, text = result['query_completed'] and result['checkin_state'] == 'already_signed', result
+        elif args.silent or args.status:
             ok, text = service.run(args.status, args.account)
         elif args.add_workbuddy:
             text, ok = service.import_workbuddy(), True

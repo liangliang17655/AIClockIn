@@ -2,6 +2,7 @@
 data/
 config.json
 accounts.json
+doubao-binding.json
 .env
 .env.*
 

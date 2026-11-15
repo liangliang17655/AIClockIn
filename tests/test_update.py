@@ -42,7 +42,8 @@ class Updates(unittest.TestCase):
         with patch.object(u, 'open_url', side_effect=error) as opened:
             with self.assertRaisesRegex(u.RateLimited, '限流'):
                 u.check('0.5.0')
-        self.assertEqual(opened.call_count, 1)
+        self.assertEqual([call.args[0] for call in opened.call_args_list].count(u.API), 1)
+        self.assertEqual(opened.call_count, 2)  # One separate official Release fallback, not an API retry.
 
     def test_permission_and_secondary_limit_are_distinct(self):
         for code, headers, body, expected in [
